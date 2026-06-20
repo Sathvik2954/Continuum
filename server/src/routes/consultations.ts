@@ -1,365 +1,338 @@
-import { Router, type Request, type Response } from 'express';
-import verifyToken from '../middleware/auth';
-import requireRole from '../middleware/roleGuard';
-import { checkPatientAccess } from '../middleware/patientAccess';
-import Consultation from '../models/Consultation';
-import PatientDoctorLink from '../models/PatientDoctorLink';
-import Medication from '../models/Medication';
-import Condition from '../models/Condition';
-import FollowUp from '../models/FollowUp';
-import logPatientChange from '../middleware/auditTrail';
-import User from '../models/User';
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
+import { verifyToken, requireRole } from '../middleware/auth';
+import { assertPatientAccess } from '../middleware/patientAccess';
+import { audioUpload } from '../middleware/upload';
+import { Consultation, VALID_TRANSITIONS, ConsultationStatus } from '../models/Consultation';
+import { Medication } from '../models/Medication';
+import { PatientDoctorLink } from '../models/PatientDoctorLink';
 
 const router = Router();
+router.use(verifyToken);
 
-// State Machine status validation helper
-function isValidTransition(from: string, to: string): boolean {
-  const transitions: Record<string, string[]> = {
-    'PATIENT_SUBMITTED': ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
-    'DOCTOR_REVIEWING': ['DOCTOR_RESPONDED', 'CLOSED'],
-    'DOCTOR_RESPONDED': ['FOLLOW_UP_PENDING', 'CLOSED'],
-    'FOLLOW_UP_PENDING': ['CLOSED'],
-    'DOCTOR_CHECKIN': ['PATIENT_RESPONDED', 'CLOSED'],
-    'PATIENT_RESPONDED': ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
-    'CLOSED': [] // Terminal state
-  };
+// ─── PATIENT: Create async consultation (with optional audio) ────────────────
+// multipart/form-data: fields + optional 'audio' file
 
-  return (transitions[from] || []).includes(to);
-}
+router.post(
+  '/',
+  requireRole('PATIENT'),
+  audioUpload.single('audio'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const patientId = req.user!.userId;
+      const { doctorId, priority, symptomsChecklist, patientNotes } = req.body;
 
-// POST /api/consultations - Patient starts a new async consultation (FR-12, FR-13)
-router.post('/', verifyToken, requireRole('PATIENT'), async (req: Request, res: Response) => {
-  const patientId = req.user!.userId;
-  const { doctorId, priority, symptomsChecklist, patientNotes, symptomAudioUrl } = req.body;
-
-  if (!doctorId) {
-    return res.status(400).json({ error: 'Doctor ID is required to initiate consultation' });
-  }
-
-  try {
-    // Confirm patient is connected to doctor
-    const link = await PatientDoctorLink.findOne({ patientId, doctorId, status: 'ACTIVE' });
-    if (!link) {
-      return res.status(403).json({ error: 'Forbidden: You must have an ACTIVE connection to this doctor' });
-    }
-
-    const consultation = new Consultation({
-      patientId,
-      doctorId,
-      type: 'ASYNC',
-      initiatedBy: 'PATIENT',
-      priority: priority || 'NORMAL',
-      status: 'PATIENT_SUBMITTED',
-      symptomsChecklist,
-      patientNotes,
-      symptomAudioUrl,
-    });
-
-    await consultation.save();
-
-    await logPatientChange(
-      patientId,
-      'CONSULTATION',
-      consultation._id as any,
-      {},
-      consultation.toObject(),
-      patientId,
-      'PATIENT'
-    );
-
-    return res.status(201).json(consultation);
-  } catch (error) {
-    console.error('Failed to create consultation:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// GET /api/consultations - List consultations for the logged-in user (FR-15, FR-16)
-router.get('/', verifyToken, async (req: Request, res: Response) => {
-  const userId = req.user!.userId;
-  const role = req.user!.role;
-
-  try {
-    let consultations: any[] = [];
-
-    if (role === 'PATIENT') {
-      consultations = await Consultation.find({ patientId: userId }).sort({ createdAt: -1 });
-    } else if (role === 'DOCTOR') {
-      // Sort by URGENT priority first, then HIGH, then NORMAL, and order chronologically (FR-16)
-      consultations = await Consultation.find({ doctorId: userId }).populate('patientId', 'name email');
-      
-      const priorityWeights: Record<string, number> = { URGENT: 3, HIGH: 2, NORMAL: 1 };
-      consultations.sort((a, b) => {
-        const weightA = priorityWeights[a.priority] || 1;
-        const weightB = priorityWeights[b.priority] || 1;
-        if (weightA !== weightB) {
-          return weightB - weightA; // Higher weight first
-        }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Newest first
-      });
-    }
-
-    return res.status(200).json(consultations);
-  } catch (error) {
-    console.error('Failed to list consultations:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// GET /api/consultations/:id - Retrieve consultation details
-router.get('/:id', verifyToken, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const userId = req.user!.userId;
-  const role = req.user!.role;
-
-  try {
-    const consultation = await Consultation.findById(id);
-    if (!consultation) {
-      return res.status(404).json({ error: 'Consultation not found' });
-    }
-
-    // Assert relationship access
-    const hasAccess = (consultation.patientId.toString() === userId) || 
-      (consultation.doctorId.toString() === userId && role === 'DOCTOR');
-      
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Forbidden: You do not have access to this consultation record' });
-    }
-
-    // Retrieve associated medications prescribed in this consultation
-    const medications = await Medication.find({ consultationId: id });
-
-    // Retrieve conditions added/modified in this consultation
-    const conditions = await Condition.find({ consultationId: id });
-
-    // Join patient user account name
-    const patientUser = await User.findById(consultation.patientId).select('name');
-
-    return res.status(200).json({
-      consultation,
-      patientName: patientUser?.name || 'Unknown Patient',
-      medications,
-      conditions,
-    });
-  } catch (error) {
-    console.error('Failed to get consultation:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// PATCH /api/consultations/:id/status - Update consultation status (state validation check)
-router.patch('/:id/status', verifyToken, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const userId = req.user!.userId;
-
-  if (!status) {
-    return res.status(400).json({ error: 'New status is required' });
-  }
-
-  try {
-    const consultation = await Consultation.findById(id);
-    if (!consultation) {
-      return res.status(404).json({ error: 'Consultation not found' });
-    }
-
-    // Verify authorized doctor or patient is editing
-    const isPatient = consultation.patientId.toString() === userId;
-    const isDoctor = consultation.doctorId.toString() === userId;
-
-    if (!isPatient && !isDoctor) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    // State machine check (FR-24)
-    if (!isValidTransition(consultation.status, status)) {
-      return res.status(400).json({
-        error: `Invalid status transition: Cannot move from ${consultation.status} to ${status}`
-      });
-    }
-
-    const oldState = consultation.toObject();
-    consultation.status = status;
-    await consultation.save();
-
-    await logPatientChange(
-      consultation.patientId.toString(),
-      'CONSULTATION',
-      consultation._id as any,
-      oldState,
-      consultation.toObject(),
-      userId,
-      req.user!.role
-    );
-
-    return res.status(200).json(consultation);
-  } catch (error) {
-    console.error('Failed to update status:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// POST /api/consultations/:id/respond - Doctor submits a response (meds + audio) (FR-21 to FR-25)
-router.post('/:id/respond', verifyToken, requireRole('DOCTOR'), async (req: Request, res: Response) => {
-  const doctorId = req.user!.userId;
-  const { id } = req.params;
-  const { doctorNotes, doctorResponseAudioUrl, medications, followUpDate, chronicConditions } = req.body;
-
-  try {
-    const consultation = await Consultation.findById(id);
-    if (!consultation) {
-      return res.status(404).json({ error: 'Consultation not found' });
-    }
-
-    if (consultation.doctorId.toString() !== doctorId) {
-      return res.status(403).json({ error: 'Forbidden: You are not the assigned doctor for this consultation' });
-    }
-
-    const oldState = consultation.toObject();
-
-    // 1. Save doctor response details
-    consultation.doctorNotes = doctorNotes;
-    consultation.doctorResponseAudioUrl = doctorResponseAudioUrl;
-    consultation.followUpDate = followUpDate ? new Date(followUpDate) : undefined;
-    consultation.status = 'DOCTOR_RESPONDED';
-    await consultation.save();
-
-    // 2. Prescribe medications if array exists (FR-46)
-    if (Array.isArray(medications) && medications.length > 0) {
-      const medicationDocs = medications.map((med: any) => ({
-        consultationId: id,
-        patientId: consultation.patientId,
-        prescribedByDoctorId: doctorId,
-        medicineName: med.medicineName,
-        dosage: med.dosage,
-        frequency: med.frequency,
-        durationDays: med.durationDays,
-        instructions: med.instructions || '',
-        startDate: med.startDate || new Date(),
-      }));
-      await Medication.insertMany(medicationDocs);
-    }
-
-    // 3. Update or diagnosed chronic conditions if array exists (FR-44)
-    if (Array.isArray(chronicConditions) && chronicConditions.length > 0) {
-      for (const cond of chronicConditions) {
-        let condition = await Condition.findOne({
-          patientId: consultation.patientId,
-          conditionName: cond.conditionName
-        });
-
-        if (condition) {
-          condition.severity = cond.severity;
-          condition.status = cond.status;
-          condition.notes = cond.notes || condition.notes;
-          condition.consultationId = id as any;
-          await condition.save();
-        } else {
-          condition = new Condition({
-            patientId: consultation.patientId,
-            addedByDoctorId: doctorId,
-            consultationId: id,
-            conditionName: cond.conditionName,
-            severity: cond.severity || 'MILD',
-            diagnosedOn: cond.diagnosedOn || new Date(),
-            status: cond.status || 'ACTIVE',
-            notes: cond.notes || '',
-          });
-          await condition.save();
-        }
+      if (!doctorId || !mongoose.Types.ObjectId.isValid(doctorId)) {
+        res.status(400).json({ error: 'Valid doctorId is required' });
+        return;
       }
-    }
 
-    // 4. Create FollowUp task if followUpDate exists (FR-54)
-    if (followUpDate) {
-      const followup = new FollowUp({
-        consultationId: id,
-        patientId: consultation.patientId,
-        doctorId,
-        scheduledDate: new Date(followUpDate),
-        type: 'AUDIO_CHECKIN', // default for async response followups
-        notes: `Follow-up scheduled from async consultation response.`,
-        completed: false,
+      // Verify ACTIVE link exists
+      const link = await PatientDoctorLink.findOne({
+        patientId: new mongoose.Types.ObjectId(patientId),
+        doctorId: new mongoose.Types.ObjectId(doctorId),
+        status: 'ACTIVE',
       });
-      await followup.save();
+
+      if (!link) {
+        res.status(403).json({ error: 'You are not connected with this doctor' });
+        return;
+      }
+
+      let parsedChecklist;
+      try {
+        parsedChecklist = symptomsChecklist ? JSON.parse(symptomsChecklist) : undefined;
+      } catch {
+        res.status(400).json({ error: 'symptomsChecklist must be valid JSON' });
+        return;
+      }
+
+      const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : undefined;
+
+      const consultation = await Consultation.create({
+        patientId: new mongoose.Types.ObjectId(patientId),
+        doctorId: new mongoose.Types.ObjectId(doctorId),
+        type: 'ASYNC',
+        initiatedBy: 'PATIENT',
+        priority: priority || 'NORMAL',
+        status: 'PATIENT_SUBMITTED',
+        symptomsChecklist: parsedChecklist,
+        patientNotes,
+        symptomAudioUrl: audioUrl,
+      });
+
+      res.status(201).json({ message: 'Consultation submitted', consultation });
+    } catch (err) {
+      console.error('Create consultation error:', err);
+      res.status(500).json({ error: 'Failed to create consultation' });
     }
-
-    // Write audit log
-    await logPatientChange(
-      consultation.patientId.toString(),
-      'CONSULTATION',
-      consultation._id as any,
-      oldState,
-      consultation.toObject(),
-      doctorId,
-      'DOCTOR'
-    );
-
-    return res.status(200).json({ success: true, consultation });
-  } catch (error) {
-    console.error('Failed to submit consultation response:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
   }
-});
+);
 
-// POST /api/consultations/checkin - Doctor initiates a patient check-in (FR-17)
-router.post('/checkin', verifyToken, requireRole('DOCTOR'), async (req: Request, res: Response) => {
-  const doctorId = req.user!.userId;
-  const { patientId, checkinTopic, doctorNotes, dueDate } = req.body;
+// ─── DOCTOR: Create check-in consultation ────────────────────────────────────
 
-  if (!patientId || !checkinTopic) {
-    return res.status(400).json({ error: 'Patient ID and checkin topic are required' });
-  }
-
+router.post('/checkin', requireRole('DOCTOR'), async (req: Request, res: Response): Promise<void> => {
   try {
-    // Confirm ACTIVE relationship link
-    const link = await PatientDoctorLink.findOne({ patientId, doctorId, status: 'ACTIVE' });
-    if (!link) {
-      return res.status(403).json({ error: 'Forbidden: You must have an ACTIVE connection to initiate check-ins' });
+    const doctorId = req.user!.userId;
+    const { patientId, checkinTopic, patientNotes } = req.body;
+
+    if (!patientId || !mongoose.Types.ObjectId.isValid(patientId)) {
+      res.status(400).json({ error: 'Valid patientId is required' });
+      return;
+    }
+    if (!checkinTopic) {
+      res.status(400).json({ error: 'checkinTopic is required' });
+      return;
     }
 
-    const consultation = new Consultation({
-      patientId,
-      doctorId,
+    const link = await PatientDoctorLink.findOne({
+      patientId: new mongoose.Types.ObjectId(patientId),
+      doctorId: new mongoose.Types.ObjectId(doctorId),
+      status: 'ACTIVE',
+    });
+
+    if (!link) {
+      res.status(403).json({ error: 'You are not connected with this patient' });
+      return;
+    }
+
+    const consultation = await Consultation.create({
+      patientId: new mongoose.Types.ObjectId(patientId),
+      doctorId: new mongoose.Types.ObjectId(doctorId),
       type: 'ASYNC',
       initiatedBy: 'DOCTOR',
       priority: 'NORMAL',
       status: 'DOCTOR_CHECKIN',
       checkinTopic,
-      doctorNotes, // Initial check-in instructions from doctor
+      doctorNotes: patientNotes,
     });
 
-    await consultation.save();
-
-    // Create a follow up check if dueDate provided
-    if (dueDate) {
-      const followup = new FollowUp({
-        consultationId: consultation._id,
-        patientId,
-        doctorId,
-        scheduledDate: new Date(dueDate),
-        type: 'VITALS_CHECK',
-        notes: `Vitals check-in topic: ${checkinTopic}`,
-        completed: false,
-      });
-      await followup.save();
-    }
-
-    await logPatientChange(
-      patientId,
-      'CONSULTATION',
-      consultation._id as any,
-      {},
-      consultation.toObject(),
-      doctorId,
-      'DOCTOR'
-    );
-
-    return res.status(201).json(consultation);
-  } catch (error) {
-    console.error('Failed to initiate check-in:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.status(201).json({ message: 'Check-in created', consultation });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create check-in' });
   }
 });
+
+// ─── GET consultations — role-aware list ──────────────────────────────────────
+
+router.get('/', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, role } = req.user!;
+    const { status, priority } = req.query;
+
+    const filter: Record<string, unknown> = { isDeleted: false };
+
+    if (role === 'PATIENT') {
+      filter.patientId = new mongoose.Types.ObjectId(userId);
+    } else if (role === 'DOCTOR') {
+      filter.doctorId = new mongoose.Types.ObjectId(userId);
+    }
+
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+
+    const consultations = await Consultation.find(filter)
+      .sort({ priority: 1, createdAt: -1 }) // URGENT/HIGH bubble via priority sort below
+      .lean();
+
+    // Sort: URGENT first, then HIGH, then NORMAL, each by recency
+    const priorityOrder: Record<string, number> = { URGENT: 0, HIGH: 1, NORMAL: 2 };
+    consultations.sort((a, b) => {
+      const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+      if (pDiff !== 0) return pDiff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    res.json({ consultations });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch consultations' });
+  }
+});
+
+// ─── GET single consultation (with medications) ──────────────────────────────
+
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, role } = req.user!;
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ error: 'Invalid consultation ID' });
+      return;
+    }
+
+    const consultation = await Consultation.findOne({ _id: id, isDeleted: false });
+    if (!consultation) {
+      res.status(404).json({ error: 'Consultation not found' });
+      return;
+    }
+
+    // Access check
+    const isOwner =
+      (role === 'PATIENT' && consultation.patientId.toString() === userId) ||
+      (role === 'DOCTOR' && consultation.doctorId.toString() === userId);
+
+    if (!isOwner && role !== 'ADMIN') {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+
+    const medications = await Medication.find({ consultationId: id }).lean();
+
+    res.json({ consultation, medications });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch consultation' });
+  }
+});
+
+// ─── DOCTOR: Mark as reviewing ────────────────────────────────────────────────
+
+router.patch('/:id/review', requireRole('DOCTOR'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const doctorId = req.user!.userId;
+    const { id } = req.params;
+
+    const consultation = await Consultation.findOne({
+      _id: id,
+      doctorId: new mongoose.Types.ObjectId(doctorId),
+      isDeleted: false,
+    });
+
+    if (!consultation) {
+      res.status(404).json({ error: 'Consultation not found' });
+      return;
+    }
+
+    if (!canTransition(consultation.status, 'DOCTOR_REVIEWING')) {
+      res.status(400).json({ error: `Cannot transition from ${consultation.status} to DOCTOR_REVIEWING` });
+      return;
+    }
+
+    consultation.status = 'DOCTOR_REVIEWING';
+    await consultation.save();
+
+    res.json({ consultation });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+// ─── DOCTOR: Respond to consultation ──────────────────────────────────────────
+// multipart/form-data: doctorNotes, followUpDate, medications (JSON string), + optional 'audio' file
+
+router.post(
+  '/:id/respond',
+  requireRole('DOCTOR'),
+  audioUpload.single('audio'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const doctorId = req.user!.userId;
+      const { id } = req.params;
+      const { doctorNotes, followUpDate, medications } = req.body;
+
+      const consultation = await Consultation.findOne({
+        _id: id,
+        doctorId: new mongoose.Types.ObjectId(doctorId),
+        isDeleted: false,
+      });
+
+      if (!consultation) {
+        res.status(404).json({ error: 'Consultation not found' });
+        return;
+      }
+
+      if (!canTransition(consultation.status, 'DOCTOR_RESPONDED')) {
+        res.status(400).json({
+          error: `Cannot respond — consultation is in ${consultation.status} state`,
+        });
+        return;
+      }
+
+      // Parse medications array
+      let parsedMeds: Array<{
+        medicineName: string; dosage: string; frequency: string;
+        durationDays: number; instructions?: string;
+      }> = [];
+      if (medications) {
+        try {
+          parsedMeds = JSON.parse(medications);
+        } catch {
+          res.status(400).json({ error: 'medications must be valid JSON array' });
+          return;
+        }
+      }
+
+      const audioUrl = req.file ? `/uploads/audio/${req.file.filename}` : undefined;
+
+      consultation.status = followUpDate ? 'FOLLOW_UP_PENDING' : 'DOCTOR_RESPONDED';
+      consultation.doctorNotes = doctorNotes;
+      consultation.doctorResponseAudioUrl = audioUrl || consultation.doctorResponseAudioUrl;
+      if (followUpDate) consultation.followUpDate = new Date(followUpDate);
+      await consultation.save();
+
+      // Insert medications
+      if (parsedMeds.length > 0) {
+        await Medication.insertMany(
+          parsedMeds.map((med) => ({
+            consultationId: consultation._id,
+            patientId: consultation.patientId,
+            prescribedByDoctorId: new mongoose.Types.ObjectId(doctorId),
+            medicineName: med.medicineName,
+            dosage: med.dosage,
+            frequency: med.frequency,
+            durationDays: med.durationDays,
+            instructions: med.instructions,
+            startDate: new Date(),
+          }))
+        );
+      }
+
+      const savedMeds = await Medication.find({ consultationId: consultation._id });
+
+      res.json({ message: 'Response submitted', consultation, medications: savedMeds });
+    } catch (err) {
+      console.error('Respond error:', err);
+      res.status(500).json({ error: 'Failed to submit response' });
+    }
+  }
+);
+
+// ─── PATIENT: Close consultation ──────────────────────────────────────────────
+
+router.patch('/:id/close', requireRole('PATIENT'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const patientId = req.user!.userId;
+    const { id } = req.params;
+
+    const consultation = await Consultation.findOne({
+      _id: id,
+      patientId: new mongoose.Types.ObjectId(patientId),
+      isDeleted: false,
+    });
+
+    if (!consultation) {
+      res.status(404).json({ error: 'Consultation not found' });
+      return;
+    }
+
+    if (!canTransition(consultation.status, 'CLOSED')) {
+      res.status(400).json({ error: `Cannot close from ${consultation.status} state` });
+      return;
+    }
+
+    consultation.status = 'CLOSED';
+    await consultation.save();
+
+    res.json({ consultation });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to close consultation' });
+  }
+});
+
+// ─── Helper: state machine guard ──────────────────────────────────────────────
+
+function canTransition(from: ConsultationStatus, to: ConsultationStatus): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
 
 export default router;

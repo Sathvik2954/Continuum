@@ -1,155 +1,118 @@
-import { Schema, model, Document as MongooseDocument, Types } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+
+export type ConsultationStatus =
+  | 'PATIENT_SUBMITTED'
+  | 'DOCTOR_REVIEWING'
+  | 'DOCTOR_RESPONDED'
+  | 'FOLLOW_UP_PENDING'
+  | 'CLOSED'
+  | 'DOCTOR_CHECKIN'
+  | 'PATIENT_RESPONDED';
+
+export type Priority = 'NORMAL' | 'HIGH' | 'URGENT';
+export type InitiatedBy = 'PATIENT' | 'DOCTOR';
 
 export interface ISymptomsChecklist {
-  fever: boolean;
-  cough: boolean;
-  breathlessness: boolean;
-  chestPain: boolean;
-  headache: boolean;
-  fatigue: boolean;
-  nausea: boolean;
-  dizziness: boolean;
-  swelling: boolean;
+  fever?: boolean;
+  cough?: boolean;
+  breathlessness?: boolean;
+  chestPain?: boolean;
+  headache?: boolean;
+  fatigue?: boolean;
+  nausea?: boolean;
+  dizziness?: boolean;
+  swelling?: boolean;
   other?: string;
 }
 
-export interface IConsultation extends MongooseDocument {
-  patientId: Types.ObjectId;
-  doctorId: Types.ObjectId;
+export interface IConsultation extends Document {
+  _id: mongoose.Types.ObjectId;
+  patientId: mongoose.Types.ObjectId;
+  doctorId: mongoose.Types.ObjectId;
   type: 'ASYNC' | 'LIVE_CALL';
-  initiatedBy: 'PATIENT' | 'DOCTOR';
-  priority: 'NORMAL' | 'HIGH' | 'URGENT';
-  status: string; // ASYNC: PATIENT_SUBMITTED, DOCTOR_REVIEWING, DOCTOR_RESPONDED, FOLLOW_UP_PENDING, CLOSED, DOCTOR_CHECKIN, PATIENT_RESPONDED. LIVE_CALL: SCHEDULED, PATIENT_JOINED, DOCTOR_JOINED, ACTIVE, ENDED, RECORDED
+  initiatedBy: InitiatedBy;
+  priority: Priority;
+  status: ConsultationStatus;
+
   checkinTopic?: string;
   symptomsChecklist?: ISymptomsChecklist;
   patientNotes?: string;
   symptomAudioUrl?: string;
   doctorResponseAudioUrl?: string;
   doctorNotes?: string;
-  callScheduledAt?: Date;
-  callStartedAt?: Date;
-  callEndedAt?: Date;
-  callDurationSeconds?: number;
-  callRecordingUrl?: string;
-  callRecordingUploadStatus?: 'PENDING' | 'UPLOADED' | 'FAILED';
+
   followUpDate?: Date;
+
   isDeleted: boolean;
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const symptomsChecklistSchema = new Schema<ISymptomsChecklist>({
-  fever: { type: Boolean, default: false },
-  cough: { type: Boolean, default: false },
-  breathlessness: { type: Boolean, default: false },
-  chestPain: { type: Boolean, default: false },
-  headache: { type: Boolean, default: false },
-  fatigue: { type: Boolean, default: false },
-  nausea: { type: Boolean, default: false },
-  dizziness: { type: Boolean, default: false },
-  swelling: { type: Boolean, default: false },
-  other: { type: String, default: '' },
-}, { _id: false });
-
-const consultationSchema = new Schema<IConsultation>(
+const SymptomsChecklistSchema = new Schema<ISymptomsChecklist>(
   {
-    patientId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    doctorId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    type: {
-      type: String,
-      required: true,
-      enum: ['ASYNC', 'LIVE_CALL'],
-    },
-    initiatedBy: {
-      type: String,
-      required: true,
-      enum: ['PATIENT', 'DOCTOR'],
-    },
-    priority: {
-      type: String,
-      required: true,
-      enum: ['NORMAL', 'HIGH', 'URGENT'],
-      default: 'NORMAL',
-    },
-    status: {
-      type: String,
-      required: true,
-    },
-    checkinTopic: {
-      type: String,
-    },
-    symptomsChecklist: {
-      type: symptomsChecklistSchema,
-    },
-    patientNotes: {
-      type: String,
-    },
-    symptomAudioUrl: {
-      type: String,
-    },
-    doctorResponseAudioUrl: {
-      type: String,
-    },
-    doctorNotes: {
-      type: String,
-    },
-    callScheduledAt: {
-      type: Date,
-    },
-    callStartedAt: {
-      type: Date,
-    },
-    callEndedAt: {
-      type: Date,
-    },
-    callDurationSeconds: {
-      type: Number,
-    },
-    callRecordingUrl: {
-      type: String,
-    },
-    callRecordingUploadStatus: {
-      type: String,
-      enum: ['PENDING', 'UPLOADED', 'FAILED'],
-    },
-    followUpDate: {
-      type: Date,
-    },
-    isDeleted: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    deletedAt: {
-      type: Date,
-    },
+    fever: { type: Boolean, default: false },
+    cough: { type: Boolean, default: false },
+    breathlessness: { type: Boolean, default: false },
+    chestPain: { type: Boolean, default: false },
+    headache: { type: Boolean, default: false },
+    fatigue: { type: Boolean, default: false },
+    nausea: { type: Boolean, default: false },
+    dizziness: { type: Boolean, default: false },
+    swelling: { type: Boolean, default: false },
+    other: { type: String, trim: true },
   },
-  {
-    timestamps: true,
-  }
+  { _id: false }
 );
 
-consultationSchema.index({ patientId: 1, createdAt: -1 });
-consultationSchema.index({ doctorId: 1, status: 1, createdAt: -1 });
+const ConsultationSchema = new Schema<IConsultation>(
+  {
+    patientId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    doctorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, enum: ['ASYNC', 'LIVE_CALL'], default: 'ASYNC' },
+    initiatedBy: { type: String, enum: ['PATIENT', 'DOCTOR'], required: true },
+    priority: { type: String, enum: ['NORMAL', 'HIGH', 'URGENT'], default: 'NORMAL' },
+    status: {
+      type: String,
+      enum: [
+        'PATIENT_SUBMITTED', 'DOCTOR_REVIEWING', 'DOCTOR_RESPONDED',
+        'FOLLOW_UP_PENDING', 'CLOSED', 'DOCTOR_CHECKIN', 'PATIENT_RESPONDED',
+      ],
+      default: 'PATIENT_SUBMITTED',
+    },
 
-consultationSchema.pre('find', function () {
-  this.where({ isDeleted: false });
-});
+    checkinTopic: { type: String, trim: true },
+    symptomsChecklist: { type: SymptomsChecklistSchema },
+    patientNotes: { type: String, trim: true },
+    symptomAudioUrl: { type: String },
+    doctorResponseAudioUrl: { type: String },
+    doctorNotes: { type: String, trim: true },
 
-consultationSchema.pre('findOne', function () {
-  this.where({ isDeleted: false });
-});
+    followUpDate: { type: Date },
 
-export const Consultation = model<IConsultation>('Consultation', consultationSchema);
-export default Consultation;
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+  },
+  { timestamps: true }
+);
+
+ConsultationSchema.index({ patientId: 1, createdAt: -1 });
+ConsultationSchema.index({ doctorId: 1, status: 1, createdAt: -1 });
+ConsultationSchema.index({ priority: 1 });
+
+// ── Status transition validation ──────────────────────────────────────────────
+// Valid transitions are enforced at the route level, not the schema level,
+// since Mongoose pre-save hooks can't easily access "previous" status without
+// an extra query. See routes/consultations.ts for the state machine guard.
+
+export const VALID_TRANSITIONS: Record<ConsultationStatus, ConsultationStatus[]> = {
+  PATIENT_SUBMITTED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
+  DOCTOR_REVIEWING:  ['DOCTOR_RESPONDED'],
+  DOCTOR_RESPONDED:  ['FOLLOW_UP_PENDING', 'CLOSED'],
+  FOLLOW_UP_PENDING: ['CLOSED'],
+  CLOSED:            [],
+  DOCTOR_CHECKIN:    ['PATIENT_RESPONDED'],
+  PATIENT_RESPONDED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
+};
+
+export const Consultation = mongoose.model<IConsultation>('Consultation', ConsultationSchema);

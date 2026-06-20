@@ -1,18 +1,21 @@
-import { Schema, model, Document as MongooseDocument } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-export interface IUser extends MongooseDocument {
+export type UserRole = 'PATIENT' | 'DOCTOR' | 'ADMIN';
+
+export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
   email: string;
   passwordHash: string;
-  role: 'PATIENT' | 'DOCTOR' | 'ADMIN';
+  role: UserRole;
   name: string;
   phone?: string;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidate: string): Promise<boolean>;
 }
 
-const userSchema = new Schema<IUser>(
+const UserSchema = new Schema<IUser>(
   {
     email: {
       type: String,
@@ -20,7 +23,6 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     passwordHash: {
       type: String,
@@ -28,8 +30,8 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      required: true,
       enum: ['PATIENT', 'DOCTOR', 'ADMIN'],
+      required: true,
     },
     name: {
       type: String,
@@ -40,17 +42,15 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpires: {
-      type: Date,
-    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export const User = model<IUser>('User', userSchema);
-export default User;
+// Compare plain password against hash
+UserSchema.methods.comparePassword = async function (
+  candidate: string
+): Promise<boolean> {
+  return bcrypt.compare(candidate, this.passwordHash);
+};
+
+export const User = mongoose.model<IUser>('User', UserSchema);

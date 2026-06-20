@@ -1,250 +1,152 @@
-import db, { type SyncQueueItem } from './offlineDB';
-import apiClient from './apiClient';
+import { db, SyncQueueItem } from './offlineDB';
+import api from './apiClient';
 
-// Helper to generate UUIDs client-side
-export function generateUUID(): string {
-  return crypto.randomUUID();
+// Exponential backoff delays in ms
+const BACKOFF = [2000, 4000, 8000, 16000, 32000];
+const MAX_RETRIES = 5;
+
+// ── Route map — maps item type to Express endpoint ───────────────────────────
+const SYNC_ROUTES: Record<string, string> = {
+  patient_profile:     '/patients/sync/profile',
+  consultation:        '/consultations',
+  vitals:              '/vitals',
+  followup_completion: '/followups/complete',
+  call_recording:      '/calls/recording',
+};
+
+// ── Core sync function ────────────────────────────────────────────────────────
+
+export async function syncPendingItems(): Promise<void> {
+  const pending = await db.sync_queue
+    .where('syncStatus')
+    .equals('pending')
+    .sortBy('createdAt');
+
+  if (pending.length === 0) return;
+
+  console.log(`🔄 Syncing ${pending.length} pending item(s)...`);
+
+  for (const item of pending) {
+    await syncItem(item);
+  }
 }
 
-type SyncStatusListener = (status: {
-  pendingCount: number;
-  syncing: boolean;
-  lastSyncedAt?: number;
-  hasErrors: boolean;
-}) => void;
-
-class SyncEngine {
-  private isSyncing = false;
-  private listeners: Set<SyncStatusListener> = new Set();
-  private lastSyncedAt?: number;
-
-  constructor() {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => this.triggerSync());
-      window.addEventListener('offline', () => this.notifyStatus());
-    }
+async function syncItem(item: SyncQueueItem): Promise<void> {
+  const route = SYNC_ROUTES[item.type];
+  if (!route) {
+    console.warn(`No route mapped for sync type: ${item.type}`);
+    return;
   }
 
-  // Register listener for UI status updates
-  subscribe(listener: SyncStatusListener) {
-    this.listeners.add(listener);
-    this.notifyStatus();
-    return () => this.listeners.delete(listener);
-  }
+  // Mark as syncing
+  await db.sync_queue.update(item.id!, {
+    syncStatus: 'syncing',
+    lastAttemptAt: Date.now(),
+  });
 
-  private async notifyStatus() {
-    try {
-      const pendingCount = await db.sync_queue.where('syncStatus').anyOf(['pending', 'syncing']).count();
-      const failedCount = await db.sync_queue.where('syncStatus').equals('failed').count();
-      this.listeners.forEach((listener) =>
-        listener({
-          pendingCount,
-          syncing: this.isSyncing,
-          lastSyncedAt: this.lastSyncedAt,
-          hasErrors: failedCount > 0,
-        })
-      );
-    } catch (err) {
-      console.error('Failed to notify status:', err);
-    }
-  }
+  try {
+    await api.post(route, item.data);
 
-  // Queue a new item for background synchronization
-  async queueItem(
-    type: SyncQueueItem['type'],
-    data: any,
-    blobField?: string,
-    blob?: Blob
-  ): Promise<string> {
-    const id = generateUUID();
-    
-    // Add client-side timestamp if missing
-    if (!data.updatedAt) {
-      data.updatedAt = new Date().toISOString();
-    }
-    // Also store unique ID in record itself
-    data.id = id;
+    // Success — mark synced
+    await db.sync_queue.update(item.id!, { syncStatus: 'synced' });
+    console.log(`✅ Synced item ${item.clientId} (${item.type})`);
+  } catch (error: unknown) {
+    const newRetryCount = item.retryCount + 1;
+    const axiosError = error as { response?: { status: number; data?: { error?: string } } };
 
-    // Save blob separately in the blobs table if exists
-    if (blob && blobField) {
-      await db.blobs.put({ id, type: blobField.includes('Audio') ? 'audio' : 'image', blob });
-    }
-
-    await db.sync_queue.put({
-      id,
-      type,
-      data,
-      blobField,
-      syncStatus: 'pending',
-      retryCount: 0,
-      createdAt: Date.now(),
-    });
-
-    this.notifyStatus();
-    
-    // Fire sync attempt immediately in background (non-blocking)
-    this.triggerSync();
-
-    return id;
-  }
-
-  // Trigger synchronization execution
-  async triggerSync(): Promise<void> {
-    if (this.isSyncing) return;
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      this.notifyStatus();
+    if (axiosError.response?.status === 409) {
+      // Conflict — server has newer version
+      await db.sync_queue.update(item.id!, {
+        syncStatus: 'failed',
+        retryCount: newRetryCount,
+        errorMessage: 'Conflict: server has a newer version of this record',
+      });
+      console.warn(`⚠️ Conflict on item ${item.clientId}`);
       return;
     }
 
-    this.isSyncing = true;
-    this.notifyStatus();
-
-    try {
-      // Find items in sync queue that are pending or need retrying
-      const items = await db.sync_queue
-        .where('syncStatus')
-        .anyOf(['pending', 'syncing'])
-        .toArray();
-
-      // Sort chronologically (oldest first)
-      items.sort((a, b) => a.createdAt - b.createdAt);
-
-      for (const item of items) {
-        await this.syncQueueItem(item);
-      }
-    } catch (err) {
-      console.error('Sync process encountered an error:', err);
-    } finally {
-      this.isSyncing = false;
-      this.lastSyncedAt = Date.now();
-      this.notifyStatus();
-    }
-  }
-
-  private async syncQueueItem(item: SyncQueueItem): Promise<void> {
-    try {
-      // 1. Mark item as syncing
-      await db.sync_queue.update(item.id!, { syncStatus: 'syncing', lastAttemptAt: Date.now() });
-      this.notifyStatus();
-
-      // 2. Upload blobs if present
-      let finalData = { ...item.data };
-      if (item.blobField) {
-        const storedBlob = await db.blobs.get(item.id!);
-        if (storedBlob) {
-          const formData = new FormData();
-          formData.append('file', storedBlob.blob, `upload_${item.id!}.${storedBlob.type === 'audio' ? 'webm' : 'jpg'}`);
-          formData.append('type', item.type);
-
-          const uploadResponse = await apiClient.post('/files/upload', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-
-          // Store returned file URL in the payload
-          finalData[item.blobField] = uploadResponse.data.url;
-        }
-      }
-
-      // 3. Post data payload to Server Sync Router
-      const response = await apiClient.post('/sync', {
-        id: item.id,
-        type: item.type,
-        data: finalData,
+    if (newRetryCount >= MAX_RETRIES) {
+      await db.sync_queue.update(item.id!, {
+        syncStatus: 'failed',
+        retryCount: newRetryCount,
+        errorMessage: axiosError.response?.data?.error || 'Max retries reached',
       });
+      console.error(`❌ Item ${item.clientId} permanently failed after ${MAX_RETRIES} retries`);
+      return;
+    }
 
-      // 4. On success, remove from queues and caches
-      await db.sync_queue.delete(item.id!);
-      await db.blobs.delete(item.id!);
+    // Schedule retry with backoff
+    const delay = BACKOFF[newRetryCount - 1] || 32000;
+    await db.sync_queue.update(item.id!, {
+      syncStatus: 'pending',
+      retryCount: newRetryCount,
+      errorMessage: axiosError.response?.data?.error || 'Network error',
+    });
 
-      // Update local IndexedDB caches with the latest state returned by the server
-      await this.updateLocalCache(item.type, response.data.record);
-    } catch (error: any) {
-      console.error(`Sync failed for item ${item.id!}:`, error);
+    console.warn(
+      `⚠️ Item ${item.clientId} failed (attempt ${newRetryCount}). Retrying in ${delay / 1000}s`
+    );
 
-      if (error.response && error.response.status === 409) {
-        // HTTP 409 Conflict: Last-write-wins reject
-        await db.sync_queue.update(item.id!, {
-          syncStatus: 'failed',
-          errorMessage: 'Conflict: This record was updated elsewhere.',
-        });
-
-        // Trigger user notification
-        this.dispatchConflictNotification(item.type, error.response.data.serverVersion);
-
-        // Fetch latest version to overwrite local cache
-        if (error.response.data.serverVersion) {
-          await this.updateLocalCache(item.type, error.response.data.serverVersion);
-        }
-      } else {
-        // Network or server temporary errors -> retry with backoff
-        const newRetryCount = item.retryCount + 1;
-        if (newRetryCount >= 5) {
-          await db.sync_queue.update(item.id!, {
-            syncStatus: 'failed',
-            errorMessage: error.message || 'Server error, exhausted retries.',
-            retryCount: newRetryCount,
-          });
-        } else {
-          await db.sync_queue.update(item.id!, {
-            syncStatus: 'pending', // Reset to try again next time
-            retryCount: newRetryCount,
-          });
-          // Wait according to backoff: 2s, 4s, 8s, 16s, 32s
-          const waitMs = Math.pow(2, newRetryCount) * 1000;
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-        }
+    setTimeout(async () => {
+      const updated = await db.sync_queue.get(item.id!);
+      if (updated?.syncStatus === 'pending') {
+        await syncItem({ ...item, retryCount: newRetryCount });
       }
-    }
-  }
-
-  // Update relevant Dexie cache table after a successful server sync
-  private async updateLocalCache(type: SyncQueueItem['type'], record: any) {
-    if (!record) return;
-    
-    switch (type) {
-      case 'patient_profile':
-        await db.cached_profile.put(record);
-        break;
-      case 'consultation':
-      case 'call_recording':
-        await db.cached_consultations.put(record);
-        break;
-      case 'vitals':
-        await db.cached_vitals.put(record);
-        break;
-      case 'followup_completion':
-        await db.cached_followups.put(record);
-        break;
-    }
-  }
-
-  // Dispatches a global custom event for showing non-blocking toast conflict alerts
-  private dispatchConflictNotification(type: string, serverVersion: any) {
-    if (typeof window !== 'undefined') {
-      const event = new CustomEvent('continuum-sync-conflict', {
-        detail: { type, serverVersion },
-      });
-      window.dispatchEvent(event);
-    }
-  }
-
-  // Manually retry a failed item in the queue
-  async retryFailedItem(id: string) {
-    const item = await db.sync_queue.get(id);
-    if (item) {
-      await db.sync_queue.update(id, { syncStatus: 'pending', retryCount: 0 });
-      this.notifyStatus();
-      this.triggerSync();
-    }
-  }
-
-  // Clear a failed item from the queue entirely (discarding local changes)
-  async discardFailedItem(id: string) {
-    await db.sync_queue.delete(id);
-    await db.blobs.delete(id);
-    this.notifyStatus();
+    }, delay);
   }
 }
 
-export const syncEngine = new SyncEngine();
-export default syncEngine;
+// ── Queue helpers ─────────────────────────────────────────────────────────────
+
+export async function queueItem(
+  type: SyncQueueItem['type'],
+  data: Record<string, unknown>
+): Promise<void> {
+  await db.sync_queue.add({
+    clientId: crypto.randomUUID(),
+    type,
+    data,
+    syncStatus: 'pending',
+    retryCount: 0,
+    createdAt: Date.now(),
+  });
+}
+
+export async function getSyncStats(): Promise<{
+  pending: number;
+  failed: number;
+  lastSyncedAt: number | null;
+}> {
+  const pending = await db.sync_queue.where('syncStatus').equals('pending').count();
+  const failed = await db.sync_queue.where('syncStatus').equals('failed').count();
+  const lastSynced = await db.sync_queue
+    .where('syncStatus')
+    .equals('synced')
+    .reverse()
+    .first();
+
+  return {
+    pending,
+    failed,
+    lastSyncedAt: lastSynced?.lastAttemptAt ?? null,
+  };
+}
+
+// ── Auto-sync on online event ─────────────────────────────────────────────────
+
+export function initSyncEngine(): () => void {
+  const handleOnline = () => {
+    console.log('🌐 Back online — starting sync...');
+    syncPendingItems();
+  };
+
+  window.addEventListener('online', handleOnline);
+
+  // Also sync immediately if already online on init
+  if (navigator.onLine) {
+    syncPendingItems();
+  }
+
+  // Cleanup
+  return () => window.removeEventListener('online', handleOnline);
+}

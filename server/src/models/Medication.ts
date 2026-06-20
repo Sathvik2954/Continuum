@@ -1,85 +1,45 @@
-import { Schema, model, Document as MongooseDocument, Types } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IMedication extends MongooseDocument {
-  consultationId: Types.ObjectId;
-  patientId: Types.ObjectId;
-  prescribedByDoctorId: Types.ObjectId;
+export interface IMedication extends Document {
+  _id: mongoose.Types.ObjectId;
+  consultationId: mongoose.Types.ObjectId;
+  patientId: mongoose.Types.ObjectId;
+  prescribedByDoctorId: mongoose.Types.ObjectId;
   medicineName: string;
   dosage: string;
   frequency: string;
   durationDays: number;
-  instructions: string;
+  instructions?: string;
   startDate: Date;
-  isExpired: boolean; // Virtual property computed dynamically
   createdAt: Date;
-  updatedAt: Date;
 }
 
-const medicationSchema = new Schema<IMedication>(
+const MedicationSchema = new Schema<IMedication>(
   {
-    consultationId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Consultation',
-      required: true,
-      index: true,
-    },
-    patientId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    prescribedByDoctorId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    medicineName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    dosage: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    frequency: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    durationDays: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    instructions: {
-      type: String,
-      default: '',
-    },
-    startDate: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
+    consultationId: { type: Schema.Types.ObjectId, ref: 'Consultation', required: true },
+    patientId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    prescribedByDoctorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    medicineName: { type: String, required: true, trim: true },
+    dosage: { type: String, required: true, trim: true },
+    frequency: { type: String, required: true, trim: true },
+    durationDays: { type: Number, required: true, min: 1 },
+    instructions: { type: String, trim: true },
+    startDate: { type: Date, default: Date.now },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
+  { timestamps: { createdAt: true, updatedAt: false } }
 );
 
-// Virtual property to calculate expiration dynamically on query reads
-medicationSchema.virtual('isExpired').get(function (this: IMedication) {
-  const expiryDate = new Date(this.startDate);
-  expiryDate.setDate(expiryDate.getDate() + this.durationDays);
-  return expiryDate < new Date();
+MedicationSchema.index({ patientId: 1, createdAt: -1 });
+MedicationSchema.index({ consultationId: 1 });
+
+// Virtual — computed on read, not stored (avoids stale data)
+MedicationSchema.virtual('isExpired').get(function (this: IMedication) {
+  const endDate = new Date(this.startDate);
+  endDate.setDate(endDate.getDate() + this.durationDays);
+  return endDate < new Date();
 });
 
-// Composite index to speed up clinical summaries
-medicationSchema.index({ patientId: 1, isExpired: 1 });
+MedicationSchema.set('toJSON', { virtuals: true });
+MedicationSchema.set('toObject', { virtuals: true });
 
-export const Medication = model<IMedication>('Medication', medicationSchema);
-export default Medication;
+export const Medication = mongoose.model<IMedication>('Medication', MedicationSchema);

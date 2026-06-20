@@ -1,61 +1,55 @@
-import PatientChange from '../models/PatientChange';
+import { Request, Response, NextFunction } from 'express';
+import { PatientChange } from '../models/PatientChange';
+import mongoose from 'mongoose';
+
+interface AuditOptions {
+  entityType: 'PROFILE' | 'CONDITION' | 'CONSULTATION' | 'MEDICATION';
+  getPatientId: (req: Request) => string;
+  getEntityId: (req: Request) => string;
+  fields: string[];
+}
 
 /**
- * Audit log helper that compares old and new state, logging differences.
- * Runs inside Express routes before a write operation is finalized.
+ * Logs changes to patient data before every write.
+ * Used as route-level middleware on PATCH/PUT routes.
  */
-export async function logPatientChange(
-  patientId: string,
-  entityType: 'PROFILE' | 'CONDITION' | 'CONSULTATION' | 'MEDICATION',
-  entityId: string,
-  oldData: Record<string, any>,
-  newData: Record<string, any>,
-  changedById: string,
-  changedByRole: 'PATIENT' | 'DOCTOR' | 'ADMIN'
-): Promise<void> {
-  const changes = [];
+export const auditLog = (options: AuditOptions) => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user) { next(); return; }
 
-  // Iterate over keys of the new data payload
-  for (const key of Object.keys(newData)) {
-    // Ignore metadata fields
-    if (['_id', 'id', 'createdAt', 'updatedAt', '__v', 'isDeleted', 'deletedAt'].includes(key)) {
-      continue;
+      const patientId = options.getPatientId(req);
+      const entityId = options.getEntityId(req);
+      const changedBy = req.user.userId;
+      const changedByRole = req.user.role;
+
+      // Log each changed field
+      const changes = options.fields
+        .filter((field) => req.body[field] !== undefined)
+        .map((field) => ({
+          patientId: new mongoose.Types.ObjectId(patientId),
+          entityType: options.entityType,
+          entityId: new mongoose.Types.ObjectId(entityId),
+          fieldChanged: field,
+          newValue: String(req.body[field]),
+          changedBy: new mongoose.Types.ObjectId(changedBy),
+          changedByRole,
+          changedAt: new Date(),
+        }));
+
+      if (changes.length > 0) {
+        await PatientChange.insertMany(changes);
+      }
+
+      next();
+    } catch (err) {
+      // Audit failure should NOT block the actual write
+      console.error('Audit log error:', err);
+      next();
     }
-
-    const oldVal = oldData[key];
-    const newVal = newData[key];
-
-    // Convert values to comparable formats
-    const oldStr = oldVal instanceof Date 
-      ? oldVal.toISOString() 
-      : typeof oldVal === 'object' && oldVal !== null 
-        ? JSON.stringify(oldVal) 
-        : oldVal !== undefined && oldVal !== null ? String(oldVal) : '';
-
-    const newStr = newVal instanceof Date 
-      ? newVal.toISOString() 
-      : typeof newVal === 'object' && newVal !== null 
-        ? JSON.stringify(newVal) 
-        : newVal !== undefined && newVal !== null ? String(newVal) : '';
-
-    // If a field is modified, record the transaction in the audit trail
-    if (oldStr !== newStr) {
-      changes.push({
-        patientId,
-        entityType,
-        entityId,
-        fieldChanged: key,
-        oldValue: oldStr,
-        newValue: newStr,
-        changedBy: changedById,
-        changedByRole,
-      });
-    }
-  }
-
-  if (changes.length > 0) {
-    // Immutable write to PatientChange
-    await PatientChange.insertMany(changes);
-  }
-}
-export default logPatientChange;
+  };
+};

@@ -8,47 +8,34 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Continuum Healthcare',
+        name: 'CONTINUUM',
         short_name: 'Continuum',
-        description: 'Lifelong Healthcare Continuity Platform',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        description: 'Offline-first healthcare continuity platform',
+        theme_color: '#0EA5E9',
+        background_color: '#FEF9F0',
         display: 'standalone',
-        orientation: 'portrait',
         icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+      },
+    }),
   ],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+    alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
-    port: 3000,
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true
+        target: 'http://localhost:3001',
+        changeOrigin: true,
       },
-      '/socket.io': {
-        target: 'http://localhost:5000',
-        ws: true,
-        changeOrigin: true
-      }
-    }
-  }
+    },
+  },
 });

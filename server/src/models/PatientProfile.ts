@@ -1,10 +1,14 @@
-import { Schema, model, Document as MongooseDocument, Types } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IPatientProfile extends MongooseDocument {
-  userId: Types.ObjectId;
+export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+
+export interface IPatientProfile extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
   dateOfBirth?: Date;
-  gender?: 'MALE' | 'FEMALE' | 'OTHER';
-  bloodGroup?: 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+  gender?: Gender;
+  bloodGroup?: BloodGroup;
   knownAllergies?: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
@@ -14,18 +18,15 @@ export interface IPatientProfile extends MongooseDocument {
   updatedAt: Date;
 }
 
-const patientProfileSchema = new Schema<IPatientProfile>(
+const PatientProfileSchema = new Schema<IPatientProfile>(
   {
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
-    dateOfBirth: {
-      type: Date,
-    },
+    dateOfBirth: { type: Date },
     gender: {
       type: String,
       enum: ['MALE', 'FEMALE', 'OTHER'],
@@ -34,40 +35,16 @@ const patientProfileSchema = new Schema<IPatientProfile>(
       type: String,
       enum: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
     },
-    knownAllergies: {
-      type: String,
-      default: '',
-    },
-    emergencyContactName: {
-      type: String,
-      default: '',
-    },
-    emergencyContactPhone: {
-      type: String,
-      default: '',
-    },
-    isDeleted: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    deletedAt: {
-      type: Date,
-    },
+    knownAllergies: { type: String, trim: true },
+    emergencyContactName: { type: String, trim: true },
+    emergencyContactPhone: { type: String, trim: true },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Middleware to automatically filter out soft-deleted items by default
-patientProfileSchema.pre('find', function () {
-  this.where({ isDeleted: false });
-});
-
-patientProfileSchema.pre('findOne', function () {
-  this.where({ isDeleted: false });
-});
-
-export const PatientProfile = model<IPatientProfile>('PatientProfile', patientProfileSchema);
-export default PatientProfile;
+export const PatientProfile = mongoose.model<IPatientProfile>(
+  'PatientProfile',
+  PatientProfileSchema
+);

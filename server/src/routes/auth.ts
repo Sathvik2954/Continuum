@@ -1,202 +1,169 @@
-import { Router, type Request, type Response } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import User from '../models/User';
-import PatientProfile from '../models/PatientProfile';
-import DoctorProfile from '../models/DoctorProfile';
+import { User } from '../models/User';
+import { PatientProfile } from '../models/PatientProfile';
+import { DoctorProfile } from '../models/DoctorProfile';
+import { verifyToken } from '../middleware/auth';
 
 const router = Router();
 
-// POST /api/auth/register - Register a new User
-router.post('/register', async (req: Request, res: Response) => {
-  const { email, password, role, name, phone } = req.body;
+// ─── REGISTER ────────────────────────────────────────────────────────────────
 
-  if (!email || !password || !role || !name) {
-    return res.status(400).json({ error: 'Missing required registration parameters' });
-  }
-
-  if (!['PATIENT', 'DOCTOR', 'ADMIN'].includes(role)) {
-    return res.status(400).json({ error: 'Invalid account role specification' });
-  }
-
+router.post('/register', async (req: Request, res: Response): Promise<void> => {
   try {
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'A user with this email already exists' });
+    const { email, password, name, phone, role, ...profileData } = req.body;
+
+    // Validate required fields
+    if (!email || !password || !name || !role) {
+      res.status(400).json({ error: 'email, password, name, and role are required' });
+      return;
     }
 
-    // Hash the password (bcrypt salt factor 12 as per specification)
+    if (!['PATIENT', 'DOCTOR'].includes(role)) {
+      res.status(400).json({ error: 'role must be PATIENT or DOCTOR' });
+      return;
+    }
+
+    if (password.length < 8) {
+      res.status(400).json({ error: 'password must be at least 8 characters' });
+      return;
+    }
+
+    // Check email not already used
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      res.status(409).json({ error: 'An account with this email already exists' });
+      return;
+    }
+
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Save user configuration
-    const user = new User({
-      email,
+    // Create user
+    const user = await User.create({
+      email: email.toLowerCase(),
       passwordHash,
       role,
       name,
       phone,
     });
-    await user.save();
 
-    // Generate JWT token (expires in 7 days as per specification)
-    const secret = process.env.JWT_SECRET || 'fallback_secret_for_development';
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      secret,
-      { expiresIn: '7d' }
-    );
+    // Create role-specific profile
+    if (role === 'DOCTOR') {
+      const { specialization, clinicName, city, registrationNumber } = profileData;
+      if (!specialization || !clinicName || !city || !registrationNumber) {
+        await User.deleteOne({ _id: user._id });
+        res.status(400).json({
+          error: 'Doctors require: specialization, clinicName, city, registrationNumber',
+        });
+        return;
+      }
+      await DoctorProfile.create({
+        userId: user._id,
+        specialization,
+        clinicName,
+        city,
+        registrationNumber,
+        verified: false,
+      });
+    } else {
+      // Patient profile created empty — filled in onboarding
+      await PatientProfile.create({ userId: user._id });
+    }
 
-    return res.status(201).json({
+    // Issue JWT
+    const token = issueToken(user._id.toString(), role, name);
+
+    res.status(201).json({
+      message: 'Account created successfully',
       token,
       user: {
         id: user._id,
         email: user.email,
-        role: user.role,
         name: user.name,
+        role: user.role,
       },
     });
-  } catch (error) {
-    console.error('Registration failed:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
 
-// POST /api/auth/login - Login existing User
-router.post('/login', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await User.findOne({ email });
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ error: 'email and password are required' });
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(400).json({ error: 'Invalid email or password credentials' });
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
     }
 
-    // Compare bcrypt hashes
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
-      return res.status(400).json({ error: 'Invalid email or password credentials' });
+    const valid = await user.comparePassword(password);
+    if (!valid) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
     }
 
-    // Query profile completed status to return in initial payload
-    let profileCompleted = false;
+    // Fetch profile for extra context
+    let profileComplete = false;
     if (user.role === 'PATIENT') {
       const profile = await PatientProfile.findOne({ userId: user._id });
-      profileCompleted = !!profile;
+      profileComplete = !!(profile?.dateOfBirth && profile?.gender);
     } else if (user.role === 'DOCTOR') {
       const profile = await DoctorProfile.findOne({ userId: user._id });
-      profileCompleted = !!profile;
+      profileComplete = !!profile;
     }
 
-    // Sign JWT
-    const secret = process.env.JWT_SECRET || 'fallback_secret_for_development';
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      secret,
-      { expiresIn: '7d' }
-    );
+    const token = issueToken(user._id.toString(), user.role, user.name);
 
-    return res.status(200).json({
+    res.json({
       token,
       user: {
         id: user._id,
         email: user.email,
-        role: user.role,
         name: user.name,
-        profileCompleted,
+        role: user.role,
+        profileComplete,
       },
     });
-  } catch (error) {
-    console.error('Login failed:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed. Please try again.' });
   }
 });
 
-// POST /api/auth/forgot-password - Initiate password reset (FR-01)
-router.post('/forgot-password', async (req: Request, res: Response) => {
-  const { email } = req.body;
+// ─── ME (get current user) ───────────────────────────────────────────────────
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email address is required' });
-  }
-
+router.get('/me', verifyToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findById(req.user!.userId).select('-passwordHash');
     if (!user) {
-      // Return 200 for security reasons (user enumeration safeguard)
-      return res.status(200).json({
-        success: true,
-        message: 'If the email exists, a reset link has been generated.',
-      });
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
-
-    // Generate token
-    const token = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour expiry
-
-    await user.save();
-
-    // Console link logging for easy local testing
-    console.log('\n=================================================');
-    console.log('  PASSWORD RESET LINK INITIATED');
-    console.log(`  Target Email : ${email}`);
-    console.log(`  Reset URL    : http://localhost:3000/reset-password?token=${token}`);
-    console.log('=================================================\n');
-
-    return res.status(200).json({
-      success: true,
-      message: 'Password reset link generated and logged.',
-      token, // Return token directly to facilitate client testing without mail servers
-    });
-  } catch (error) {
-    console.error('Forgot password request failed:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
-// POST /api/auth/reset-password - Complete password reset (FR-01)
-router.post('/reset-password', async (req: Request, res: Response) => {
-  const { token, newPassword } = req.body;
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-  if (!token || !newPassword) {
-    return res.status(400).json({ error: 'Token and new password are required' });
-  }
-
-  if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'New password must be at least 6 characters long' });
-  }
-
-  try {
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ error: 'Password reset token is invalid or has expired' });
-    }
-
-    // Update password
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Password reset completed successfully. You may now log in.',
-    });
-  } catch (error) {
-    console.error('Password reset completion failed:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+function issueToken(userId: string, role: string, name: string): string {
+  const secret = process.env.JWT_SECRET!;
+  return jwt.sign({ userId, role, name }, secret, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  } as jwt.SignOptions);
+}
 
 export default router;
