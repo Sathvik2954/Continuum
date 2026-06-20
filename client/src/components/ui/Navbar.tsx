@@ -3,15 +3,15 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext';
 
 const NAV_LINKS_PATIENT = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/timeline',  label: 'Timeline' },
-  { to: '/doctors',   label: 'Find Doctors' },
+  { to: '/dashboard',      label: 'Dashboard' },
+  { to: '/doctors',        label: 'Find Doctors' },
+  { to: '/my-doctors',     label: 'My Doctors' },
+  { to: '/consultations',  label: 'Consultations' },
 ];
 
 const NAV_LINKS_DOCTOR = [
-  { to: '/dashboard',   label: 'Dashboard' },
-  { to: '/patients',    label: 'My Patients' },
-  { to: '/analytics',   label: 'Analytics' },
+  { to: '/dashboard',      label: 'Dashboard' },
+  { to: '/consultations',  label: 'Consultations' },
 ];
 
 export const Navbar: React.FC = () => {

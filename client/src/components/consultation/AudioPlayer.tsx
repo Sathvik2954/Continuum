@@ -11,6 +11,13 @@ export const AudioPlayer: React.FC<Props> = ({ src, label }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  // Reset audio states when source changes
+  React.useEffect(() => {
+    setPlaying(false);
+    setProgress(0);
+    setDuration(0);
+  }, [src]);
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) {

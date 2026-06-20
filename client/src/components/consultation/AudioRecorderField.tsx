@@ -17,7 +17,7 @@ export const AudioRecorderField: React.FC<Props> = ({
   maxDurationSeconds, onRecordingComplete, label = 'Record audio',
 }) => {
   const {
-    isRecording, durationSeconds, audioUrl, error,
+    isRecording, durationSeconds, audioBlob, audioUrl, error,
     startRecording, stopRecording, resetRecording,
   } = useAudioRecorder({ maxDurationSeconds });
 
@@ -29,12 +29,10 @@ export const AudioRecorderField: React.FC<Props> = ({
     stopRecording();
   };
 
-  // Notify parent when blob is ready (audioUrl changes after blob is set)
+  // Notify parent when blob is ready
   React.useEffect(() => {
-    if (audioUrl) {
-      fetch(audioUrl).then((r) => r.blob()).then(onRecordingComplete);
-    }
-  }, [audioUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+    onRecordingComplete(audioBlob);
+  }, [audioBlob, onRecordingComplete]);
 
   const handleReset = () => {
     resetRecording();
@@ -79,14 +77,14 @@ export const AudioRecorderField: React.FC<Props> = ({
               {isRecording ? (
                 <>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-urgent-DEFAULT animate-pulse-fast" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-urgent animate-pulse-fast" />
                     <span className="text-[13px] font-medium text-[#991B1B]">
                       Recording · {formatTime(durationSeconds)}
                     </span>
                   </div>
                   <div className="w-full h-1 rounded-full bg-[rgba(239,68,68,0.15)] overflow-hidden">
                     <div
-                      className="h-full bg-urgent-DEFAULT rounded-full transition-all duration-1000"
+                      className="h-full bg-urgent rounded-full transition-all duration-1000"
                       style={{ width: `${pctRemaining}%` }}
                     />
                   </div>

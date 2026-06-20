@@ -7,6 +7,7 @@ interface AuthUser {
   name: string;
   role: 'PATIENT' | 'DOCTOR' | 'ADMIN';
   profileComplete?: boolean;
+  verified?: boolean;
 }
 
 interface AuthContextType {

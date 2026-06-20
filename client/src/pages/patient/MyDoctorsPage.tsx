@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../lib/apiClient';
 import { Avatar } from '../../components/ui/Avatar';
 import { GlassCard } from '../../components/ui/GlassCard';
@@ -72,8 +73,8 @@ export const MyDoctorsPage: React.FC = () => {
             Doctors who have access to your health records
           </p>
         </div>
-        <a
-          href="/doctors"
+        <Link
+          to="/doctors"
           className="text-[13px] font-medium px-4 py-2 rounded-sm"
           style={{
             background: 'rgba(14,165,233,0.20)',
@@ -82,7 +83,7 @@ export const MyDoctorsPage: React.FC = () => {
           }}
         >
           + Find doctor
-        </a>
+        </Link>
       </div>
 
       {/* Active connections */}
@@ -170,8 +171,8 @@ export const MyDoctorsPage: React.FC = () => {
           <p className="text-[13px] text-[#78716C] mb-4">
             Find a verified doctor and send a connection request to get started
           </p>
-          <a
-            href="/doctors"
+          <Link
+            to="/doctors"
             className="inline-block text-[13px] font-medium px-5 py-2.5 rounded-sm"
             style={{
               background: 'rgba(14,165,233,0.75)',
@@ -181,7 +182,7 @@ export const MyDoctorsPage: React.FC = () => {
             }}
           >
             Find a doctor
-          </a>
+          </Link>
         </GlassCard>
       )}
     </div>

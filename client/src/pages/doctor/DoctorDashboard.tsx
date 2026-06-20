@@ -23,8 +23,10 @@ export const DoctorDashboard: React.FC = () => {
   const [tab, setTab] = useState<Tab>('patients');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
+  const [loadingConsultations, setLoadingConsultations] = useState(true);
   const [responding, setResponding] = useState<string | null>(null);
 
   const fetchPatients = useCallback(async () => {
@@ -45,10 +47,20 @@ export const DoctorDashboard: React.FC = () => {
     }
   }, []);
 
+  const fetchConsultations = useCallback(async () => {
+    try {
+      const res = await api.get('/consultations');
+      setConsultations(res.data.consultations || []);
+    } finally {
+      setLoadingConsultations(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPatients();
     fetchRequests();
-  }, [fetchPatients, fetchRequests]);
+    fetchConsultations();
+  }, [fetchPatients, fetchRequests, fetchConsultations]);
 
   const handleRespond = async (linkId: string, action: 'accept' | 'decline') => {
     setResponding(linkId);
@@ -64,6 +76,16 @@ export const DoctorDashboard: React.FC = () => {
   };
 
   const initials = user?.name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() ?? '?';
+
+  const todayStr = new Date().toDateString();
+  const pendingReview = consultations.filter((c) =>
+    ['PATIENT_SUBMITTED', 'DOCTOR_REVIEWING', 'PATIENT_RESPONDED'].includes(c.status)
+  ).length;
+  const followUps = consultations.filter((c) =>
+    c.status === 'FOLLOW_UP_PENDING' &&
+    c.followUpDate &&
+    new Date(c.followUpDate).toDateString() === todayStr
+  ).length;
 
   return (
     <div className="max-w-5xl mx-auto px-6 pt-8 pb-24">
@@ -87,15 +109,15 @@ export const DoctorDashboard: React.FC = () => {
           <div className="text-[16px] font-medium text-sky-900">Dr. {user?.name}</div>
           <div className="text-[13px] text-[#78716C] mt-0.5">{user?.email}</div>
         </div>
-        <StatusPill variant="unverified" />
+        <StatusPill variant={user?.verified ? 'verified' : 'unverified'} />
       </GlassCard>
 
       <div className="grid grid-cols-2 gap-4 mb-6 sm:grid-cols-4">
         {[
           { label: 'My Patients',   value: patients.length,  sub: 'Connected' },
           { label: 'Requests',      value: requests.length,  sub: 'Awaiting response', alert: requests.length > 0 },
-          { label: 'Consultations', value: 0,                sub: 'Pending review' },
-          { label: 'Follow-ups',    value: 0,                sub: 'Due today' },
+          { label: 'Consultations', value: pendingReview,    sub: 'Pending review', alert: pendingReview > 0 },
+          { label: 'Follow-ups',    value: followUps,        sub: 'Due today' },
         ].map((stat) => (
           <GlassCard key={stat.label} className="p-4">
             <div className="text-[11px] font-medium text-[#7A5C14] uppercase tracking-wider mb-1">

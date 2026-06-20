@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { queueItem } from '../../lib/syncEngine';
 import { db } from '../../lib/offlineDB';
 import { useAuth } from '../../lib/authContext';
@@ -74,8 +74,7 @@ export const OnboardingPage: React.FC = () => {
   };
 
   if (user?.role !== 'PATIENT') {
-    navigate('/dashboard');
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (

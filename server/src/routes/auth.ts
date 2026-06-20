@@ -116,12 +116,14 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     // Fetch profile for extra context
     let profileComplete = false;
+    let verified = false;
     if (user.role === 'PATIENT') {
       const profile = await PatientProfile.findOne({ userId: user._id });
       profileComplete = !!(profile?.dateOfBirth && profile?.gender);
     } else if (user.role === 'DOCTOR') {
       const profile = await DoctorProfile.findOne({ userId: user._id });
       profileComplete = !!profile;
+      verified = profile?.verified || false;
     }
 
     const token = issueToken(user._id.toString(), user.role, user.name);
@@ -134,6 +136,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         name: user.name,
         role: user.role,
         profileComplete,
+        verified,
       },
     });
   } catch (err) {
@@ -151,7 +154,19 @@ router.get('/me', verifyToken, async (req: Request, res: Response): Promise<void
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    res.json({ user });
+    const userObj = user.toObject();
+    let verified = false;
+    if (user.role === 'DOCTOR') {
+      const profile = await DoctorProfile.findOne({ userId: user._id });
+      verified = profile?.verified || false;
+    }
+    res.json({
+      user: {
+        ...userObj,
+        id: user._id.toString(),
+        verified,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user' });
   }

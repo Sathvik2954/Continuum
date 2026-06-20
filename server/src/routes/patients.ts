@@ -3,11 +3,23 @@ import { verifyToken, requireRole } from '../middleware/auth';
 import { auditLog } from '../middleware/auditTrail';
 import { PatientProfile } from '../models/PatientProfile';
 import { User } from '../models/User';
+import { Medication } from '../models/Medication';
 
 const router = Router();
 
 // All patient routes require auth
 router.use(verifyToken);
+
+// ─── GET own medications ──────────────────────────────────────────────────────
+
+router.get('/me/medications', requireRole('PATIENT'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const medications = await Medication.find({ patientId: req.user!.userId }).sort({ startDate: -1 });
+    res.json({ medications });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch medications' });
+  }
+});
 
 // ─── GET own profile ──────────────────────────────────────────────────────────
 

@@ -9,6 +9,11 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { OnboardingPage } from './pages/patient/OnboardingPage';
 import { PatientDashboard } from './pages/patient/PatientDashboard';
 import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
+import { DoctorSearchPage } from './pages/patient/DoctorSearchPage';
+import { MyDoctorsPage } from './pages/patient/MyDoctorsPage';
+import { ConsultationListPage } from './pages/patient/ConsultationListPage';
+import { NewConsultationPage } from './pages/patient/NewConsultationPage';
+import { ConsultationDetailPage } from './pages/doctor/ConsultationDetailPage';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -45,6 +50,56 @@ const AppRoutes: React.FC = () => {
                 ? <DoctorDashboard />
                 : <PatientDashboard />
               }
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Doctor Search */}
+        <Route
+          path="/doctors"
+          element={
+            <ProtectedRoute role="PATIENT">
+              <DoctorSearchPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Patient's connected doctors */}
+        <Route
+          path="/my-doctors"
+          element={
+            <ProtectedRoute role="PATIENT">
+              <MyDoctorsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Consultations list */}
+        <Route
+          path="/consultations"
+          element={
+            <ProtectedRoute>
+              <ConsultationListPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create new consultation */}
+        <Route
+          path="/consultations/new"
+          element={
+            <ProtectedRoute role="PATIENT">
+              <NewConsultationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Consultation detail & response */}
+        <Route
+          path="/consultations/:id"
+          element={
+            <ProtectedRoute>
+              <ConsultationDetailPage />
             </ProtectedRoute>
           }
         />

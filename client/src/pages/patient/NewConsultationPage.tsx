@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../lib/apiClient';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { SymptomChecklist, SymptomsState, EMPTY_SYMPTOMS } from '../../components/consultation/SymptomChecklist';
@@ -122,7 +122,7 @@ export const NewConsultationPage: React.FC = () => {
             {doctors.length === 0 && (
               <p className="text-[12px] text-[#78350F] mt-1.5">
                 You need to connect with a doctor first.{' '}
-                <a href="/doctors" className="underline">Find a doctor</a>
+                <Link to="/doctors" className="underline">Find a doctor</Link>
               </p>
             )}
           </div>

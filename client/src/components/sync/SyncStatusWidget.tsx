@@ -59,9 +59,9 @@ export const SyncStatusWidget: React.FC = () => {
     : 'synced';
 
   const config = {
-    synced:  { dot: 'bg-success-DEFAULT animate-pulse-slow', text: `Synced · ${formatTime(stats.lastSyncedAt)}`, textColor: 'text-[#065F46]' },
-    pending: { dot: 'bg-high-DEFAULT animate-pulse-fast',   text: `${stats.pending} item${stats.pending > 1 ? 's' : ''} pending`, textColor: 'text-[#78350F]' },
-    failed:  { dot: 'bg-urgent-DEFAULT',                    text: `${stats.failed} sync failed`, textColor: 'text-[#991B1B]' },
+    synced:  { dot: 'bg-success animate-pulse-slow', text: `Synced · ${formatTime(stats.lastSyncedAt)}`, textColor: 'text-[#065F46]' },
+    pending: { dot: 'bg-high animate-pulse-fast',   text: `${stats.pending} item${stats.pending > 1 ? 's' : ''} pending`, textColor: 'text-[#78350F]' },
+    failed:  { dot: 'bg-urgent',                    text: `${stats.failed} sync failed`, textColor: 'text-[#991B1B]' },
     offline: { dot: 'bg-[#A8A29E]',                         text: 'Offline · data saved locally', textColor: 'text-[#78716C]' },
   }[state];
 
@@ -77,7 +77,7 @@ export const SyncStatusWidget: React.FC = () => {
       {state === 'pending' && (
         <div className="w-24 h-1 rounded-full bg-[rgba(245,158,11,0.2)] overflow-hidden">
           <div
-            className="h-full bg-high-DEFAULT rounded-full transition-all duration-300"
+            className="h-full bg-high rounded-full transition-all duration-300"
             style={{ width: `${Math.min((stats.pending / 10) * 100, 100)}%` }}
           />
         </div>
