@@ -43,6 +43,9 @@ export interface IConsultation extends Document {
 
   followUpDate?: Date;
 
+  // Live call-specific fields (Phase 8)
+  callDurationSeconds?: number;
+
   isDeleted: boolean;
   deletedAt?: Date;
   createdAt: Date;
@@ -90,6 +93,8 @@ const ConsultationSchema = new Schema<IConsultation>(
 
     followUpDate: { type: Date },
 
+    callDurationSeconds: { type: Number },
+
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
   },
@@ -106,13 +111,13 @@ ConsultationSchema.index({ priority: 1 });
 // an extra query. See routes/consultations.ts for the state machine guard.
 
 export const VALID_TRANSITIONS: Record<ConsultationStatus, ConsultationStatus[]> = {
-  PATIENT_SUBMITTED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
-  DOCTOR_REVIEWING:  ['DOCTOR_RESPONDED'],
+  PATIENT_SUBMITTED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED', 'FOLLOW_UP_PENDING'],
+  DOCTOR_REVIEWING:  ['DOCTOR_RESPONDED', 'FOLLOW_UP_PENDING'],
   DOCTOR_RESPONDED:  ['FOLLOW_UP_PENDING', 'CLOSED'],
   FOLLOW_UP_PENDING: ['CLOSED'],
   CLOSED:            [],
   DOCTOR_CHECKIN:    ['PATIENT_RESPONDED'],
-  PATIENT_RESPONDED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED'],
+  PATIENT_RESPONDED: ['DOCTOR_REVIEWING', 'DOCTOR_RESPONDED', 'FOLLOW_UP_PENDING'],
 };
 
 export const Consultation = mongoose.model<IConsultation>('Consultation', ConsultationSchema);

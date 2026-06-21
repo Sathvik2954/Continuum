@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../lib/authContext';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Avatar } from '../../components/ui/Avatar';
 import { StatusPill } from '../../components/ui/StatusPill';
 import { SyncStatusWidget } from '../../components/sync/SyncStatusWidget';
+import { FollowUpsList } from '../../components/followups/FollowUpsList';
 import api from '../../lib/apiClient';
 
 interface Patient {
@@ -24,10 +26,14 @@ export const DoctorDashboard: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [consultations, setConsultations] = useState<any[]>([]);
+  const [followUpsList, setFollowUpsList] = useState<any[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [loadingConsultations, setLoadingConsultations] = useState(true);
+  const [loadingFollowUps, setLoadingFollowUps] = useState(true);
   const [responding, setResponding] = useState<string | null>(null);
+  const [expandedPatientId, setExpandedPatientId] = useState<string | null>(null);
+  const [calls, setCalls] = useState<any[]>([]);
 
   const fetchPatients = useCallback(async () => {
     try {
@@ -56,11 +62,24 @@ export const DoctorDashboard: React.FC = () => {
     }
   }, []);
 
+  const fetchFollowUps = useCallback(async () => {
+    try {
+      const res = await api.get('/followups/doctor/all');
+      setFollowUpsList(res.data.followUps || []);
+    } catch {
+      setFollowUpsList([]);
+    } finally {
+      setLoadingFollowUps(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPatients();
     fetchRequests();
     fetchConsultations();
-  }, [fetchPatients, fetchRequests, fetchConsultations]);
+    fetchFollowUps();
+    api.get('/calls').then((res) => setCalls(res.data.calls || [])).catch(() => setCalls([]));
+  }, [fetchPatients, fetchRequests, fetchConsultations, fetchFollowUps]);
 
   const handleRespond = async (linkId: string, action: 'accept' | 'decline') => {
     setResponding(linkId);
@@ -81,24 +100,31 @@ export const DoctorDashboard: React.FC = () => {
   const pendingReview = consultations.filter((c) =>
     ['PATIENT_SUBMITTED', 'DOCTOR_REVIEWING', 'PATIENT_RESPONDED'].includes(c.status)
   ).length;
-  const followUps = consultations.filter((c) =>
-    c.status === 'FOLLOW_UP_PENDING' &&
-    c.followUpDate &&
-    new Date(c.followUpDate).toDateString() === todayStr
+  const followUps = followUpsList.filter((f) =>
+    !f.completed &&
+    new Date(f.scheduledDate).toDateString() === todayStr
   ).length;
 
   return (
     <div className="max-w-5xl mx-auto px-6 pt-8 pb-24">
-
-      <div className="mb-7">
-        <h1 className="text-[22px] font-medium text-sky-900">
-          Good morning, Dr. {user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p className="text-[13px] text-[#78716C] mt-1">
-          {new Date().toLocaleDateString('en-IN', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-          })}
-        </p>
+      <div className="mb-7 flex justify-between items-center">
+        <div>
+          <h1 className="text-[22px] font-medium text-sky-900">
+            Good morning, Dr. {user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p className="text-[13px] text-[#78716C] mt-1">
+            {new Date().toLocaleDateString('en-IN', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+            })}
+          </p>
+        </div>
+        <Link
+          to="/calls/schedule"
+          className="px-3.5 py-2 text-[12px] font-medium text-cream-50 rounded-sm hover:opacity-90 transition-opacity"
+          style={{ background: 'rgba(14,165,233,0.75)', border: '0.5px solid rgba(255,255,255,0.45)' }}
+        >
+          📞 Schedule Call
+        </Link>
       </div>
 
       <GlassCard className="p-5 mb-6 flex items-center gap-4">
@@ -132,6 +158,32 @@ export const DoctorDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Scheduled Calls */}
+      {calls.filter((c) => ['SCHEDULED', 'CONFIRMED', 'PATIENT_JOINED', 'DOCTOR_JOINED', 'ACTIVE'].includes(c.status)).length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-[14px] font-medium text-sky-900 mb-3">Scheduled Live Calls</h2>
+          <div className="space-y-2">
+            {calls
+              .filter((c) => ['SCHEDULED', 'CONFIRMED', 'PATIENT_JOINED', 'DOCTOR_JOINED', 'ACTIVE'].includes(c.status))
+              .map((c) => (
+                <div key={c._id} className="glass rounded-lg p-4 flex justify-between items-center">
+                  <div>
+                    <div className="text-[13px] font-medium text-sky-900">
+                      Live Call with {c.patientId?.name || 'Patient'}
+                    </div>
+                    <div className="text-[11px] text-[#78716C] mt-0.5">
+                      {new Date(c.scheduledAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <Link to={`/calls/${c._id}`} className="px-3.5 py-1.5 text-[11px] font-medium text-cream-50 rounded-sm" style={{ background: '#10B981', border: '0.5px solid rgba(255,255,255,0.45)' }}>
+                    Join
+                  </Link>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-1 mb-5 glass-subtle rounded-sm p-1 w-fit">
         {([
           { key: 'patients', label: `My Patients (${patients.length})` },
@@ -157,18 +209,31 @@ export const DoctorDashboard: React.FC = () => {
             </GlassCard>
           ) : (
             <div className="space-y-3">
-              {patients.map((p) => (
-                <GlassCard key={p.link._id} className="p-4 card-hover" hover>
-                  <div className="flex items-center gap-4">
-                    <Avatar name={p.patient.name} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-medium text-sky-900">{p.patient.name}</div>
-                      <div className="text-[12px] text-[#78716C] mt-0.5">{p.patient.email}</div>
+              {patients.map((p) => {
+                const isExpanded = expandedPatientId === p.patient._id;
+                return (
+                  <GlassCard
+                    key={p.link._id}
+                    className="p-4 card-hover cursor-pointer"
+                    hover
+                    onClick={() => setExpandedPatientId(isExpanded ? null : p.patient._id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar name={p.patient.name} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-medium text-sky-900">{p.patient.name}</div>
+                        <div className="text-[12px] text-[#78716C] mt-0.5">{p.patient.email}</div>
+                      </div>
+                      <StatusPill variant="active" />
                     </div>
-                    <StatusPill variant="active" />
-                  </div>
-                </GlassCard>
-              ))}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-[rgba(14,165,233,0.15)]" onClick={(e) => e.stopPropagation()}>
+                        <FollowUpsList patientId={p.patient._id} isPatientView={false} />
+                      </div>
+                    )}
+                  </GlassCard>
+                );
+              })}
             </div>
           )}
         </div>

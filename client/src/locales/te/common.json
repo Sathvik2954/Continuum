@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "dashboard": "డాష్board్",
+    "timeline": "కాలక్రమం",
+    "consultations": "సంప్రదింపులు",
+    "findDoctors": "డాక్టర్లను కనుగొనండి",
+    "myDoctors": "నా డాక్టర్లు",
+    "analytics": "విశ్లేషణ"
+  },
+  "auth": {
+    "welcomeBack": "తిరిగి స్వాగతం",
+    "signIn": "సైన్ ఇన్ చేయండి",
+    "createAccount": "ఖాతా సృష్టించండి",
+    "email": "ఇమెయిల్ చిరునామా",
+    "password": "పాస్వర్డ్",
+    "fullName": "పూర్తి పేరు",
+    "noAccount": "ఖాతా లేదా?",
+    "haveAccount": "ఇప్పటికే ఖాతా ఉందా?",
+    "patient": "రోగి",
+    "doctor": "డాక్టర్"
+  },
+  "dashboard": {
+    "goodMorning": "శుభోదయం",
+    "myDoctors": "నా డాక్టర్లు",
+    "consultations": "సంప్రదింపులు",
+    "followUpsDue": "ఫాలో-అప్స్ రావలసినవి",
+    "conditions": "వ్యాధులు",
+    "medications": "మందులు"
+  },
+  "consultation": {
+    "newConsultation": "కొత్త సంప్రదింపు",
+    "selectDoctor": "డాక్టర్ను ఎంచుకోండి",
+    "priority": "ప్రాధాన్యత",
+    "normal": "సాధారణ",
+    "high": "ఎక్కువ",
+    "urgent": "అత్యవసరం",
+    "symptoms": "లక్షణాలు — వర్తించేవి ఎంచుకోండి",
+    "recordAudio": "మీ లక్షణాలను వాయిస్ ద్వారా తెలియజేయండి",
+    "additionalNotes": "అదనపు వివరాలు",
+    "submit": "సంప్రదింపు పంపండి",
+    "fever": "జ్వరం",
+    "cough": "దగ్గు",
+    "breathlessness": "శ్వాస ఆడకపోవడం",
+    "chestPain": "ఛాతీ నొప్పి",
+    "headache": "తలనొప్పి",
+    "fatigue": "అలసట",
+    "nausea": "వికారం",
+    "dizziness": "తలతిరగడం",
+    "swelling": "వాపు"
+  },
+  "medication": {
+    "dosage": "మోతాదు",
+    "frequency": "ఎన్నిసార్లు",
+    "duration": "వ్యవధి",
+    "instructions": "సూచనలు",
+    "active": "నడుస్తున్నది",
+    "completed": "పూర్తయింది",
+    "listenToInstructions": "సూచనలు వినండి"
+  },
+  "vitals": {
+    "logVitals": "ఆరోగ్య వివరాలు నమోదు చేయండి",
+    "bloodPressure": "రక్తపోటు",
+    "bloodGlucose": "రక్తంలో చక్కెర",
+    "weight": "బరువు",
+    "heartRate": "హృదయ స్పందన రేటు",
+    "save": "సేవ్ చేయండి"
+  },
+  "sync": {
+    "synced": "సింక్ అయింది",
+    "pending": "పెండింగ్",
+    "failed": "సింక్ విఫలమైంది",
+    "offline": "మీరు ఆఫ్లైన్ లో ఉన్నారు — డేటా సురక్షితంగా ఉంది",
+    "retry": "మళ్ళీ ప్రయత్నించండి"
+  },
+  "common": {
+    "loading": "లోడ్ అవుతోంది…",
+    "save": "సేవ్ చేయండి",
+    "cancel": "రద్దు చేయండి",
+    "back": "వెనుకకు",
+    "search": "వెతకండి",
+    "noResults": "ఫలితాలు కనుగొనబడలేదు"
+  }
+}

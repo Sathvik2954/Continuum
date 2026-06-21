@@ -114,14 +114,22 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Fetch profile for extra context
+    // Fetch profile for extra context and check if deactivated
     let profileComplete = false;
     let verified = false;
     if (user.role === 'PATIENT') {
       const profile = await PatientProfile.findOne({ userId: user._id });
+      if (profile?.isDeleted) {
+        res.status(403).json({ error: 'This account has been deactivated' });
+        return;
+      }
       profileComplete = !!(profile?.dateOfBirth && profile?.gender);
     } else if (user.role === 'DOCTOR') {
       const profile = await DoctorProfile.findOne({ userId: user._id });
+      if (profile?.isDeleted) {
+        res.status(403).json({ error: 'This account has been deactivated' });
+        return;
+      }
       profileComplete = !!profile;
       verified = profile?.verified || false;
     }
@@ -154,6 +162,22 @@ router.get('/me', verifyToken, async (req: Request, res: Response): Promise<void
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    // Check if account has been soft-deleted
+    if (user.role === 'PATIENT') {
+      const profile = await PatientProfile.findOne({ userId: user._id });
+      if (!profile || profile.isDeleted) {
+        res.status(403).json({ error: 'This account has been deactivated' });
+        return;
+      }
+    } else if (user.role === 'DOCTOR') {
+      const profile = await DoctorProfile.findOne({ userId: user._id });
+      if (!profile || profile.isDeleted) {
+        res.status(403).json({ error: 'This account has been deactivated' });
+        return;
+      }
+    }
+
     const userObj = user.toObject();
     let verified = false;
     if (user.role === 'DOCTOR') {

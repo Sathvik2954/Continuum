@@ -5,7 +5,9 @@ import { assertPatientAccess } from '../middleware/patientAccess';
 import { audioUpload } from '../middleware/upload';
 import { Consultation, VALID_TRANSITIONS, ConsultationStatus } from '../models/Consultation';
 import { Medication } from '../models/Medication';
+import { FollowUp } from '../models/FollowUp';
 import { PatientDoctorLink } from '../models/PatientDoctorLink';
+import { DoctorProfile } from '../models/DoctorProfile';
 
 const router = Router();
 router.use(verifyToken);
@@ -125,7 +127,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     if (role === 'PATIENT') {
       filter.patientId = new mongoose.Types.ObjectId(userId);
     } else if (role === 'DOCTOR') {
+      const activeLinks = await PatientDoctorLink.find({
+        doctorId: new mongoose.Types.ObjectId(userId),
+        status: 'ACTIVE',
+      }).select('patientId').lean();
+      const activePatientIds = activeLinks.map((l) => l.patientId);
+
       filter.doctorId = new mongoose.Types.ObjectId(userId);
+      filter.patientId = { $in: activePatientIds };
     }
 
     if (status) filter.status = status;
@@ -168,11 +177,31 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     // Access check
-    const isOwner =
-      (role === 'PATIENT' && consultation.patientId.toString() === userId) ||
-      (role === 'DOCTOR' && consultation.doctorId.toString() === userId);
-
-    if (!isOwner && role !== 'ADMIN') {
+    if (role === 'DOCTOR') {
+      if (consultation.doctorId.toString() !== userId) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(userId), isDeleted: false });
+      if (!doctorProfile || !doctorProfile.verified) {
+        res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+        return;
+      }
+      const link = await PatientDoctorLink.findOne({
+        patientId: consultation.patientId,
+        doctorId: new mongoose.Types.ObjectId(userId),
+        status: 'ACTIVE',
+      });
+      if (!link) {
+        res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
+        return;
+      }
+    } else if (role === 'PATIENT') {
+      if (consultation.patientId.toString() !== userId) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+    } else if (role !== 'ADMIN') {
       res.status(403).json({ error: 'Access denied' });
       return;
     }
@@ -200,6 +229,24 @@ router.patch('/:id/review', requireRole('DOCTOR'), async (req: Request, res: Res
 
     if (!consultation) {
       res.status(404).json({ error: 'Consultation not found' });
+      return;
+    }
+
+    // Check if doctor is verified
+    const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(doctorId), isDeleted: false });
+    if (!doctorProfile || !doctorProfile.verified) {
+      res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+      return;
+    }
+
+    // Check active connection link
+    const link = await PatientDoctorLink.findOne({
+      patientId: consultation.patientId,
+      doctorId: new mongoose.Types.ObjectId(doctorId),
+      status: 'ACTIVE',
+    });
+    if (!link) {
+      res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
       return;
     }
 
@@ -238,6 +285,24 @@ router.post(
 
       if (!consultation) {
         res.status(404).json({ error: 'Consultation not found' });
+        return;
+      }
+
+      // Check if doctor is verified
+      const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(doctorId), isDeleted: false });
+      if (!doctorProfile || !doctorProfile.verified) {
+        res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+        return;
+      }
+
+      // Check active connection link
+      const link = await PatientDoctorLink.findOne({
+        patientId: consultation.patientId,
+        doctorId: new mongoose.Types.ObjectId(doctorId),
+        status: 'ACTIVE',
+      });
+      if (!link) {
+        res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
         return;
       }
 
@@ -289,7 +354,21 @@ router.post(
 
       const savedMeds = await Medication.find({ consultationId: consultation._id });
 
-      res.json({ message: 'Response submitted', consultation, medications: savedMeds });
+      // Create the actual FollowUp document — not just a date field on the
+      // consultation. This is what powers the Upcoming/Overdue dashboards.
+      let followUp = null;
+      if (followUpDate) {
+        followUp = await FollowUp.create({
+          consultationId: consultation._id,
+          patientId: consultation.patientId,
+          doctorId: new mongoose.Types.ObjectId(doctorId),
+          scheduledDate: new Date(followUpDate),
+          type: 'IN_PERSON',
+          notes: doctorNotes,
+        });
+      }
+
+      res.json({ message: 'Response submitted', consultation, medications: savedMeds, followUp });
     } catch (err) {
       console.error('Respond error:', err);
       res.status(500).json({ error: 'Failed to submit response' });

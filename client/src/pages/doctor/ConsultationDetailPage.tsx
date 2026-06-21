@@ -7,6 +7,8 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { StatusPill } from '../../components/ui/StatusPill';
 import { AudioPlayer } from '../../components/consultation/AudioPlayer';
 import { AudioRecorderField } from '../../components/consultation/AudioRecorderField';
+import { AddConditionForm } from '../../components/timeline/AddConditionForm';
+import { SpeakMedicationButton } from '../../components/medication/SpeakMedicationButton';
 
 interface MedicationForm {
   medicineName: string;
@@ -60,6 +62,7 @@ export const ConsultationDetailPage: React.FC = () => {
   const [meds, setMeds] = useState<MedicationForm[]>([{ ...EMPTY_MED }]);
   const [responseAudio, setResponseAudio] = useState<Blob | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showConditionForm, setShowConditionForm] = useState(false);
 
   const isDoctor = user?.role === 'DOCTOR';
 
@@ -203,6 +206,34 @@ export const ConsultationDetailPage: React.FC = () => {
         </div>
       )}
 
+      {/* Doctor: add condition + view full timeline */}
+      {isDoctor && (
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={() => setShowConditionForm(true)}
+            className="text-[12px] font-medium px-3.5 py-2 rounded-sm"
+            style={{ background: 'rgba(245,158,11,0.18)', border: '0.5px solid rgba(245,158,11,0.40)', color: '#78350F' }}
+          >
+            + Add condition
+          </button>
+          <button
+            onClick={() => navigate(`/patients/${consultation.patientId}/timeline`)}
+            className="text-[12px] font-medium px-3.5 py-2 rounded-sm glass-subtle text-sky-600"
+          >
+            View full patient timeline →
+          </button>
+        </div>
+      )}
+
+      {showConditionForm && (
+        <AddConditionForm
+          patientId={consultation.patientId}
+          consultationId={consultation._id}
+          onAdded={() => fetchData()}
+          onClose={() => setShowConditionForm(false)}
+        />
+      )}
+
       {/* Doctor response (if exists) */}
       {hasResponded && (
         <GlassCard className="p-5 mb-5" elevated>
@@ -230,13 +261,26 @@ export const ConsultationDetailPage: React.FC = () => {
               <div className="space-y-2">
                 {medications.map((m) => (
                   <div key={m._id} className="glass-subtle rounded-md p-3">
-                    <div className="text-[14px] font-medium text-sky-900">{m.medicineName}</div>
-                    <div className="text-[12px] text-[#78716C] mt-0.5">
-                      {m.dosage} · {m.frequency} · {m.durationDays} days
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <div className="text-[14px] font-medium text-sky-900">{m.medicineName}</div>
+                        <div className="text-[12px] text-[#78716C] mt-0.5">
+                          {m.dosage} · {m.frequency} · {m.durationDays} days
+                        </div>
+                        {m.instructions && (
+                          <div className="text-[12px] text-sky-600 mt-1">{m.instructions}</div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0">
+                        <SpeakMedicationButton
+                          medicineName={m.medicineName}
+                          dosage={m.dosage}
+                          frequency={m.frequency}
+                          durationDays={m.durationDays}
+                          instructions={m.instructions}
+                        />
+                      </div>
                     </div>
-                    {m.instructions && (
-                      <div className="text-[12px] text-sky-600 mt-1">{m.instructions}</div>
-                    )}
                   </div>
                 ))}
               </div>

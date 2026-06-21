@@ -4,6 +4,7 @@ import api from '../../lib/apiClient';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { SymptomChecklist, SymptomsState, EMPTY_SYMPTOMS } from '../../components/consultation/SymptomChecklist';
 import { AudioRecorderField } from '../../components/consultation/AudioRecorderField';
+import { queueItem } from '../../lib/syncEngine';
 
 interface DoctorOption {
   doctorId: string;
@@ -52,6 +53,15 @@ export const NewConsultationPage: React.FC = () => {
     }).catch(() => setDoctors([]));
   }, []);
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -63,10 +73,29 @@ export const NewConsultationPage: React.FC = () => {
 
     setSubmitting(true);
     try {
+      const symptomsChecklist = JSON.stringify(symptoms);
+      
+      if (!navigator.onLine) {
+        let audioBase64 = '';
+        if (audioBlob) {
+          audioBase64 = await blobToBase64(audioBlob);
+        }
+        await queueItem('consultation', {
+          doctorId,
+          priority,
+          symptomsChecklist,
+          patientNotes: notes,
+          audioBase64,
+        });
+        alert('You are offline. Your consultation has been saved locally and will sync when you reconnect.');
+        navigate('/consultations');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('doctorId', doctorId);
       formData.append('priority', priority);
-      formData.append('symptomsChecklist', JSON.stringify(symptoms));
+      formData.append('symptomsChecklist', symptomsChecklist);
       formData.append('patientNotes', notes);
       if (audioBlob) {
         formData.append('audio', audioBlob, 'symptoms.webm');

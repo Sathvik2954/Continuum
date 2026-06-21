@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "dashboard": "डैशबोर्ड",
+    "timeline": "समयरेखा",
+    "consultations": "परामर्श",
+    "findDoctors": "डॉक्टर खोजें",
+    "myDoctors": "मेरे डॉक्टर",
+    "analytics": "विश्लेषण"
+  },
+  "auth": {
+    "welcomeBack": "वापसी पर स्वागत है",
+    "signIn": "साइन इन करें",
+    "createAccount": "खाता बनाएं",
+    "email": "ईमेल पता",
+    "password": "पासवर्ड",
+    "fullName": "पूरा नाम",
+    "noAccount": "खाता नहीं है?",
+    "haveAccount": "पहले से खाता है?",
+    "patient": "मरीज़",
+    "doctor": "डॉक्टर"
+  },
+  "dashboard": {
+    "goodMorning": "सुप्रभात",
+    "myDoctors": "मेरे डॉक्टर",
+    "consultations": "परामर्श",
+    "followUpsDue": "फॉलो-अप देय",
+    "conditions": "बीमारियां",
+    "medications": "दवाइयां"
+  },
+  "consultation": {
+    "newConsultation": "नया परामर्श",
+    "selectDoctor": "डॉक्टर चुनें",
+    "priority": "प्राथमिकता",
+    "normal": "सामान्य",
+    "high": "अधिक",
+    "urgent": "तत्काल",
+    "symptoms": "लक्षण — जो लागू हों चुनें",
+    "recordAudio": "अपने लक्षण आवाज़ में बताएं",
+    "additionalNotes": "अतिरिक्त जानकारी",
+    "submit": "परामर्श भेजें",
+    "fever": "बुखार",
+    "cough": "खांसी",
+    "breathlessness": "सांस लेने में तकलीफ",
+    "chestPain": "सीने में दर्द",
+    "headache": "सिरदर्द",
+    "fatigue": "थकान",
+    "nausea": "जी मिचलाना",
+    "dizziness": "चक्कर आना",
+    "swelling": "सूजन"
+  },
+  "medication": {
+    "dosage": "खुराक",
+    "frequency": "कितनी बार",
+    "duration": "अवधि",
+    "instructions": "निर्देश",
+    "active": "चालू",
+    "completed": "पूर्ण",
+    "listenToInstructions": "निर्देश सुनें"
+  },
+  "vitals": {
+    "logVitals": "स्वास्थ्य जानकारी दर्ज करें",
+    "bloodPressure": "रक्तचाप",
+    "bloodGlucose": "रक्त शर्करा",
+    "weight": "वज़न",
+    "heartRate": "हृदय गति",
+    "save": "सहेजें"
+  },
+  "sync": {
+    "synced": "सिंक हो गया",
+    "pending": "लंबित",
+    "failed": "सिंक विफल",
+    "offline": "आप ऑफ़लाइन हैं — डेटा सुरक्षित है",
+    "retry": "पुनः प्रयास करें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है…",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "back": "वापस",
+    "search": "खोजें",
+    "noResults": "कोई परिणाम नहीं मिला"
+  }
+}

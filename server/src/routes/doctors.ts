@@ -19,7 +19,7 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
     const skip = (pageNum - 1) * limitNum;
 
     // Build filter
-    const filter: Record<string, unknown> = {
+    const filter: Record<string, any> = {
       verified: true,
       isDeleted: false,
     };
@@ -31,32 +31,37 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
       filter.city = { $regex: city as string, $options: 'i' };
     }
 
+    if (q) {
+      const queryRegex = { $regex: q as string, $options: 'i' };
+      
+      const users = await User.find({
+        role: 'DOCTOR',
+        name: queryRegex,
+      }).select('_id').lean();
+      const userIds = users.map((u) => u._id);
+
+      filter.$or = [
+        { userId: { $in: userIds } },
+        { specialization: queryRegex },
+        { city: queryRegex },
+        { clinicName: queryRegex },
+      ];
+    }
+
+    const total = await DoctorProfile.countDocuments(filter);
+
     const profiles = await DoctorProfile.find(filter)
       .skip(skip)
       .limit(limitNum)
       .lean();
 
     // Get user details for each profile
-    let results = await Promise.all(
+    const results = await Promise.all(
       profiles.map(async (profile) => {
         const user = await User.findById(profile.userId).select('name email').lean();
         return { ...profile, name: user?.name, email: user?.email };
       })
     );
-
-    // Filter by name query if provided
-    if (q) {
-      const query = (q as string).toLowerCase();
-      results = results.filter(
-        (r) =>
-          r.name?.toLowerCase().includes(query) ||
-          r.specialization?.toLowerCase().includes(query) ||
-          r.city?.toLowerCase().includes(query) ||
-          r.clinicName?.toLowerCase().includes(query)
-      );
-    }
-
-    const total = results.length;
 
     res.json({
       doctors: results,

@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "timeline": "Timeline",
+    "consultations": "Consultations",
+    "findDoctors": "Find Doctors",
+    "myDoctors": "My Doctors",
+    "analytics": "Analytics"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "email": "Email address",
+    "password": "Password",
+    "fullName": "Full name",
+    "noAccount": "No account?",
+    "haveAccount": "Already have an account?",
+    "patient": "Patient",
+    "doctor": "Doctor"
+  },
+  "dashboard": {
+    "goodMorning": "Good morning",
+    "myDoctors": "My Doctors",
+    "consultations": "Consultations",
+    "followUpsDue": "Follow-ups due",
+    "conditions": "Conditions",
+    "medications": "Medications"
+  },
+  "consultation": {
+    "newConsultation": "New consultation",
+    "selectDoctor": "Select doctor",
+    "priority": "Priority",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent",
+    "symptoms": "Symptoms — select all that apply",
+    "recordAudio": "Describe your symptoms by voice",
+    "additionalNotes": "Additional notes",
+    "submit": "Submit consultation",
+    "fever": "Fever",
+    "cough": "Cough",
+    "breathlessness": "Breathlessness",
+    "chestPain": "Chest pain",
+    "headache": "Headache",
+    "fatigue": "Fatigue",
+    "nausea": "Nausea",
+    "dizziness": "Dizziness",
+    "swelling": "Swelling"
+  },
+  "medication": {
+    "dosage": "Dosage",
+    "frequency": "Frequency",
+    "duration": "Duration",
+    "instructions": "Instructions",
+    "active": "Active",
+    "completed": "Completed",
+    "listenToInstructions": "Listen to instructions"
+  },
+  "vitals": {
+    "logVitals": "Log vitals",
+    "bloodPressure": "Blood pressure",
+    "bloodGlucose": "Blood glucose",
+    "weight": "Weight",
+    "heartRate": "Heart rate",
+    "save": "Save vitals"
+  },
+  "sync": {
+    "synced": "Synced",
+    "pending": "pending",
+    "failed": "sync failed",
+    "offline": "You are offline — data saved locally",
+    "retry": "Retry"
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "search": "Search",
+    "noResults": "No results found"
+  }
+}

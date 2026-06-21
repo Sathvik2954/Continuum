@@ -4,16 +4,33 @@ import { AuthProvider, useAuth } from './lib/authContext';
 import { initSyncEngine } from './lib/syncEngine';
 import { ProtectedRoute } from './components/ui/ProtectedRoute';
 import { Navbar } from './components/ui/Navbar';
+import { SyncErrorPanel } from './components/sync/SyncErrorPanel';
+
+// Auth
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+
+// Patient
 import { OnboardingPage } from './pages/patient/OnboardingPage';
 import { PatientDashboard } from './pages/patient/PatientDashboard';
-import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
 import { DoctorSearchPage } from './pages/patient/DoctorSearchPage';
 import { MyDoctorsPage } from './pages/patient/MyDoctorsPage';
-import { ConsultationListPage } from './pages/patient/ConsultationListPage';
 import { NewConsultationPage } from './pages/patient/NewConsultationPage';
+import { ConsultationListPage } from './pages/patient/ConsultationListPage';
+import { TimelinePage } from './pages/patient/TimelinePage';
+
+// Doctor
+import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
 import { ConsultationDetailPage } from './pages/doctor/ConsultationDetailPage';
+import { DoctorAnalyticsPage } from './pages/doctor/AnalyticsPage';
+import { MyPatientsSearchPage } from './pages/doctor/MyPatientsSearchPage';
+
+// Call
+import { ScheduleCallPage } from './pages/call/ScheduleCall';
+import { CallRoomPage } from './pages/call/CallRoom';
+
+// Admin
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -26,83 +43,79 @@ const AppRoutes: React.FC = () => {
   return (
     <>
       {user && <Navbar />}
+      <SyncErrorPanel />
       <Routes>
         {/* Public */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Patient onboarding */}
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute role="PATIENT">
-              <OnboardingPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/onboarding" element={
+          <ProtectedRoute role="PATIENT"><OnboardingPage /></ProtectedRoute>
+        } />
 
-        {/* Dashboards — role-based */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              {user?.role === 'DOCTOR'
-                ? <DoctorDashboard />
-                : <PatientDashboard />
-              }
-            </ProtectedRoute>
-          }
-        />
+        {/* Dashboard — role aware */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            {user?.role === 'DOCTOR' ? (
+              <DoctorDashboard />
+            ) : user?.role === 'ADMIN' ? (
+              <Navigate to="/admin" replace />
+            ) : (
+              <PatientDashboard />
+            )}
+          </ProtectedRoute>
+        } />
 
-        {/* Doctor Search */}
-        <Route
-          path="/doctors"
-          element={
-            <ProtectedRoute role="PATIENT">
-              <DoctorSearchPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Patient-only */}
+        <Route path="/doctors" element={
+          <ProtectedRoute role="PATIENT"><DoctorSearchPage /></ProtectedRoute>
+        } />
+        <Route path="/my-doctors" element={
+          <ProtectedRoute role="PATIENT"><MyDoctorsPage /></ProtectedRoute>
+        } />
+        <Route path="/consultations/new" element={
+          <ProtectedRoute role="PATIENT"><NewConsultationPage /></ProtectedRoute>
+        } />
 
-        {/* Patient's connected doctors */}
-        <Route
-          path="/my-doctors"
-          element={
-            <ProtectedRoute role="PATIENT">
-              <MyDoctorsPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Timeline — patient's own (no param) */}
+        <Route path="/timeline" element={
+          <ProtectedRoute role="PATIENT"><TimelinePage /></ProtectedRoute>
+        } />
+        {/* Doctor patients search */}
+        <Route path="/patients" element={
+          <ProtectedRoute role="DOCTOR"><MyPatientsSearchPage /></ProtectedRoute>
+        } />
+        {/* Timeline — doctor viewing a specific patient */}
+        <Route path="/patients/:patientId/timeline" element={
+          <ProtectedRoute role="DOCTOR"><TimelinePage /></ProtectedRoute>
+        } />
 
-        {/* Consultations list */}
-        <Route
-          path="/consultations"
-          element={
-            <ProtectedRoute>
-              <ConsultationListPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Shared — both roles */}
+        <Route path="/consultations" element={
+          <ProtectedRoute><ConsultationListPage /></ProtectedRoute>
+        } />
+        <Route path="/consultations/:id" element={
+          <ProtectedRoute><ConsultationDetailPage /></ProtectedRoute>
+        } />
 
-        {/* Create new consultation */}
-        <Route
-          path="/consultations/new"
-          element={
-            <ProtectedRoute role="PATIENT">
-              <NewConsultationPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Calls */}
+        <Route path="/calls/schedule" element={
+          <ProtectedRoute><ScheduleCallPage /></ProtectedRoute>
+        } />
+        <Route path="/calls/:id" element={
+          <ProtectedRoute><CallRoomPage /></ProtectedRoute>
+        } />
 
-        {/* Consultation detail & response */}
-        <Route
-          path="/consultations/:id"
-          element={
-            <ProtectedRoute>
-              <ConsultationDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Doctor Analytics */}
+        <Route path="/analytics" element={
+          <ProtectedRoute role="DOCTOR"><DoctorAnalyticsPage /></ProtectedRoute>
+        } />
+
+        {/* Admin Panel */}
+        <Route path="/admin" element={
+          <ProtectedRoute role="ADMIN"><AdminDashboard /></ProtectedRoute>
+        } />
 
         {/* Fallback */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
