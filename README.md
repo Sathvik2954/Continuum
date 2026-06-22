@@ -1,6 +1,6 @@
 # CONTINUUM
 
-**Offline-first healthcare continuity platform — patient ↔ doctor, anywhere.**
+**Offline-first healthcare continuity platform - patient ↔ doctor, anywhere.**
 
 **Live:** https://continuum-alpha-two.vercel.app
 
@@ -10,7 +10,7 @@
 
 ## What it is
 
-CONTINUUM is a healthcare continuity platform built for patients who see multiple doctors and lose the thread between appointments — and for doctors who spend the first ten minutes of every consultation asking questions that were already answered by someone else.
+CONTINUUM is a healthcare continuity platform built for patients who see multiple doctors and lose the thread between appointments - and for doctors who spend the first ten minutes of every consultation asking questions that were already answered by someone else.
 
 Patients maintain a single, portable health record: conditions, medications, consultations, lab reports, vitals. They share access with specific doctors. Doctors see the full picture before responding. Everything works offline and syncs when connectivity returns.
 
@@ -20,27 +20,27 @@ Patients maintain a single, portable health record: conditions, medications, con
 
 ### For patients
 
-- **Health timeline** — every consultation, condition, medication, document, and vital in one chronological feed
-- **Async consultations** — record symptoms by voice, submit to a connected doctor, receive a response with structured medications and follow-up scheduling
-- **Document upload** — lab reports, scans, and prescriptions attached to your record, compressed client-side before upload
-- **Vitals tracking** — blood pressure, glucose, weight, heart rate with trend charts
-- **Live calls** — scheduled WebRTC video calls with doctors, call audio saved to your timeline automatically
-- **Offline-first** — everything above works without internet; data syncs automatically when back online
+- **Health timeline** - every consultation, condition, medication, document, and vital in one chronological feed
+- **Async consultations** - record symptoms by voice, submit to a connected doctor, receive a response with structured medications and follow-up scheduling
+- **Document upload** - lab reports, scans, and prescriptions attached to your record, compressed client-side before upload
+- **Vitals tracking** - blood pressure, glucose, weight, heart rate with trend charts
+- **Live calls** - scheduled WebRTC video calls with doctors, call audio saved to your timeline automatically
+- **Offline-first** - everything above works without internet; data syncs automatically when back online
 
 ### For doctors
 
-- **Patient timeline view** — full health history before responding to any consultation
-- **Structured medications** — prescribe with dosage, frequency, duration, and instructions; active medications surfaced in the patient's profile
-- **Condition management** — add chronic conditions with severity and status; only doctors can add conditions (not inferred from symptom checkboxes)
-- **Follow-up scheduling** — schedule follow-ups from any consultation response; overdue follow-ups surfaced on the dashboard
-- **Doctor-initiated check-ins** — reach out to chronic patients without waiting for them to submit a consultation
-- **Analytics** — patient count, avg response time, follow-up completion rate, top conditions, call stats; CSV export
+- **Patient timeline view** - full health history before responding to any consultation
+- **Structured medications** - prescribe with dosage, frequency, duration, and instructions; active medications surfaced in the patient's profile
+- **Condition management** - add chronic conditions with severity and status; only doctors can add conditions (not inferred from symptom checkboxes)
+- **Follow-up scheduling** - schedule follow-ups from any consultation response; overdue follow-ups surfaced on the dashboard
+- **Doctor-initiated check-ins** - reach out to chronic patients without waiting for them to submit a consultation
+- **Analytics** - patient count, avg response time, follow-up completion rate, top conditions, call stats; CSV export
 
 ### For admins
 
-- **Doctor verification** — one-click approve/revoke verified status
-- **User management** — view all users, filter by role, soft-delete accounts
-- **Storage monitoring** — file count and total MB across uploads
+- **Doctor verification** - one-click approve/revoke verified status
+- **User management** - view all users, filter by role, soft-delete accounts
+- **Storage monitoring** - file count and total MB across uploads
 
 ---
 
@@ -50,15 +50,15 @@ Patients maintain a single, portable health record: conditions, medications, con
 continuum/
 ├── client/          React + Vite + TypeScript + Tailwind CSS
 │   ├── PWA          vite-plugin-pwa (offline shell, service worker)
-│   ├── Offline DB   Dexie.js (IndexedDB) — sync queue + timeline cache
+│   ├── Offline DB   Dexie.js (IndexedDB) - sync queue + timeline cache
 │   └── Real-time    Socket.io client + RTCPeerConnection (WebRTC)
 │
 └── server/          Node.js + Express + TypeScript
     ├── Database     MongoDB Atlas (Mongoose ODM)
     ├── Auth         JWT (jsonwebtoken + bcryptjs)
-    ├── Files        Multer — audio, images, call recordings
-    ├── Real-time    Socket.io — WebRTC signaling server
-    └── i18n         Client-side (i18next) — English, Hindi, Telugu
+    ├── Files        Multer - audio, images, call recordings
+    ├── Real-time    Socket.io - WebRTC signaling server
+    └── i18n         Client-side (i18next) - English, Hindi, Telugu
 ```
 
 ### Offline sync flow
@@ -78,7 +78,7 @@ Sync engine
 └── Pull fresh data ───────► Update IndexedDB cache
 ```
 
-Conflict resolution: client sends `updatedAt`, server rejects stale writes with HTTP 409. User sees a non-blocking notification — no silent data loss.
+Conflict resolution: client sends `updatedAt`, server rejects stale writes with HTTP 409. User sees a non-blocking notification - no silent data loss.
 
 ### WebRTC call flow
 
@@ -155,7 +155,7 @@ JWT_SECRET=<generate with: node -e "console.log(require('crypto').randomBytes(64
 PORT=3001
 CLIENT_ORIGIN=http://localhost:5173
 
-# Optional — TURN server for WebRTC NAT traversal
+# Optional - TURN server for WebRTC NAT traversal
 # Without these, calls work on the same network but may fail on mobile data
 XIRSYS_IDENT=
 XIRSYS_SECRET=
@@ -173,10 +173,10 @@ VITE_API_ORIGIN=http://localhost:3001
 ### 4. Run
 
 ```bash
-# Terminal 1 — server
+# Terminal 1 - server
 cd server && npm run dev
 
-# Terminal 2 — client
+# Terminal 2 - client
 cd client && npm run dev
 ```
 
@@ -208,7 +208,7 @@ Admin accounts cannot be self-registered by design (prevents privilege escalatio
 
 Add all `.env` variables in Render's Environment tab. `CLIENT_ORIGIN` must match your Vercel URL exactly, no trailing slash.
 
-> **Note:** Render's free tier sleeps after 15 minutes of inactivity. The first request after sleep takes ~30 seconds. WebRTC calls will fail if the signaling server is cold — upgrade to a paid instance before live use.
+> **Note:** Render's free tier sleeps after 15 minutes of inactivity. The first request after sleep takes ~30 seconds. WebRTC calls will fail if the signaling server is cold - upgrade to a paid instance before live use.
 
 ### Vercel (frontend)
 
@@ -229,7 +229,7 @@ Add `VITE_API_ORIGIN=https://continuum-a8um.onrender.com` in Vercel's Environmen
 
 1. Open Chrome DevTools → Network → **Offline**
 2. Register as a patient, complete health profile, submit a consultation with audio
-3. Check Application → IndexedDB → `continuum_db` → `sync_queue` — pending items should appear
+3. Check Application → IndexedDB → `continuum_db` → `sync_queue` - pending items should appear
 4. Set network back to **Online**
 5. The sync engine fires automatically on the `online` event
 6. Verify records in MongoDB Atlas → Collections
@@ -284,10 +284,10 @@ continuum/
         ├── middleware/
         │   ├── auth.ts          JWT verification + role guard
         │   ├── auditTrail.ts    Patient change logging
-        │   ├── patientAccess.ts assertPatientAccess() — core access control
-        │   ├── upload.ts        Multer — async audio
-        │   ├── uploadImage.ts   Multer — documents
-        │   └── uploadCallRecording.ts  Multer — call recordings
+        │   ├── patientAccess.ts assertPatientAccess() - core access control
+        │   ├── upload.ts        Multer - async audio
+        │   ├── uploadImage.ts   Multer - documents
+        │   └── uploadCallRecording.ts  Multer - call recordings
         ├── models/
         │   ├── Call.ts
         │   ├── Condition.ts
@@ -324,16 +324,16 @@ continuum/
 
 ## Future scope
 
-- **Persistent file storage** — migrate audio, documents, and call recordings from local filesystem to Cloudflare R2 or AWS S3 for durability across deployments
-- **Full i18n coverage** — extend Hindi and Telugu translations across all pages and components (currently covers Navbar and Patient Dashboard)
-- **SMS / WhatsApp notifications** — notify patients of doctor responses and upcoming follow-ups via Twilio when the app is not open
-- **Family health management** — allow a single account to manage health records for dependents (children, elderly parents)
-- **Diagnostic center integration** — allow labs and imaging centers to upload reports directly to a patient's record without going through the patient manually
-- **Medication reminders** — push notifications or SMS reminders when a medication dose is due, based on prescribed frequency
-- **Doctor availability calendar** — let doctors set available slots for live calls so patients can self-schedule without back-and-forth
-- **Population health analytics** — village-level or region-level disease trend dashboards for public health administrators, built on anonymised aggregated data
-- **AI-assisted symptom triage** — surface relevant past consultations and conditions when a patient submits symptoms, helping doctors respond faster
-- **Multi-language voice input** — extend audio symptom recording with speech-to-text transcription in Hindi and Telugu so doctors can read symptoms without listening to full recordings
+- **Persistent file storage** - migrate audio, documents, and call recordings from local filesystem to Cloudflare R2 or AWS S3 for durability across deployments
+- **Full i18n coverage** - extend Hindi and Telugu translations across all pages and components (currently covers Navbar and Patient Dashboard)
+- **SMS / WhatsApp notifications** - notify patients of doctor responses and upcoming follow-ups via Twilio when the app is not open
+- **Family health management** - allow a single account to manage health records for dependents (children, elderly parents)
+- **Diagnostic center integration** - allow labs and imaging centers to upload reports directly to a patient's record without going through the patient manually
+- **Medication reminders** - push notifications or SMS reminders when a medication dose is due, based on prescribed frequency
+- **Doctor availability calendar** - let doctors set available slots for live calls so patients can self-schedule without back-and-forth
+- **Population health analytics** - village-level or region-level disease trend dashboards for public health administrators, built on anonymised aggregated data
+- **AI-assisted symptom triage** - surface relevant past consultations and conditions when a patient submits symptoms, helping doctors respond faster
+- **Multi-language voice input** - extend audio symptom recording with speech-to-text transcription in Hindi and Telugu so doctors can read symptoms without listening to full recordings
 
 ---
 
