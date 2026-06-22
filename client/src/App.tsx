@@ -18,6 +18,7 @@ import { MyDoctorsPage } from './pages/patient/MyDoctorsPage';
 import { NewConsultationPage } from './pages/patient/NewConsultationPage';
 import { ConsultationListPage } from './pages/patient/ConsultationListPage';
 import { TimelinePage } from './pages/patient/TimelinePage';
+import { ProfilePage } from './pages/patient/ProfilePage';
 
 // Doctor
 import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
@@ -97,6 +98,9 @@ const AppRoutes: React.FC = () => {
         } />
         <Route path="/consultations/:id" element={
           <ProtectedRoute><ConsultationDetailPage /></ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute><ProfilePage /></ProtectedRoute>
         } />
 
         {/* Calls */}

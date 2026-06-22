@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getSyncStats, syncPendingItems } from '../../lib/syncEngine';
 
 interface SyncStats {
@@ -8,6 +9,7 @@ interface SyncStats {
 }
 
 export const SyncStatusWidget: React.FC = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<SyncStats>({ pending: 0, failed: 0, lastSyncedAt: null });
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncing, setSyncing] = useState(false);
@@ -59,10 +61,10 @@ export const SyncStatusWidget: React.FC = () => {
     : 'synced';
 
   const config = {
-    synced:  { dot: 'bg-success animate-pulse-slow', text: `Synced · ${formatTime(stats.lastSyncedAt)}`, textColor: 'text-[#065F46]' },
-    pending: { dot: 'bg-high animate-pulse-fast',   text: `${stats.pending} item${stats.pending > 1 ? 's' : ''} pending`, textColor: 'text-[#78350F]' },
-    failed:  { dot: 'bg-urgent',                    text: `${stats.failed} sync failed`, textColor: 'text-[#991B1B]' },
-    offline: { dot: 'bg-[#A8A29E]',                         text: 'Offline · data saved locally', textColor: 'text-[#78716C]' },
+    synced:  { dot: 'bg-success animate-pulse-slow', text: `${t('sync.synced')} · ${formatTime(stats.lastSyncedAt)}`, textColor: 'text-[#065F46]' },
+    pending: { dot: 'bg-high animate-pulse-fast',   text: `${stats.pending} ${t('sync.pending')}`, textColor: 'text-[#78350F]' },
+    failed:  { dot: 'bg-urgent',                    text: `${stats.failed} ${t('sync.failed')}`, textColor: 'text-[#991B1B]' },
+    offline: { dot: 'bg-[#A8A29E]',                         text: t('sync.offline'), textColor: 'text-[#78716C]' },
   }[state];
 
   return (
@@ -89,7 +91,7 @@ export const SyncStatusWidget: React.FC = () => {
           onClick={handleManualSync}
           className="text-xs font-medium text-sky-600 glass-subtle px-3 py-1 rounded-sm"
         >
-          Retry
+          {t('sync.retry')}
         </button>
       )}
 
@@ -100,7 +102,7 @@ export const SyncStatusWidget: React.FC = () => {
           disabled={syncing}
           className="text-xs text-[#78716C] disabled:opacity-40"
         >
-          {syncing ? 'Syncing…' : '↻'}
+          {syncing ? t('common.loading') : '↻'}
         </button>
       )}
     </div>

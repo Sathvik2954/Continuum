@@ -46,7 +46,7 @@ export const RegisterPage: React.FC = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-[22px] font-medium text-sky-900 tracking-widest">CONTINUUM</h1>
-          <p className="text-[13px] text-[#78716C] mt-1">healthcare continuity</p>
+          <p className="text-[13px] text-[#78716C] mt-1">Healthcare Continuity</p>
         </div>
 
         <div className="glass rounded-xl p-7">

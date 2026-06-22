@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/apiClient';
 import { queueItem } from '../../lib/syncEngine';
 import { GlassCard } from '../ui/GlassCard';
@@ -25,6 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export const FollowUpsList: React.FC<Props> = ({ patientId, isPatientView }) => {
+  const { t } = useTranslation();
   const [upcoming, setUpcoming] = useState<FollowUp[]>([]);
   const [overdue, setOverdue] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +75,7 @@ export const FollowUpsList: React.FC<Props> = ({ patientId, isPatientView }) => 
   if (upcoming.length === 0 && overdue.length === 0) {
     return (
       <GlassCard className="p-6 text-center">
-        <div className="text-[13px] text-[#78716C]">No follow-ups scheduled</div>
+        <div className="text-[13px] text-[#78716C]">{t('dashboard.noFollowUpsScheduled')}</div>
       </GlassCard>
     );
   }

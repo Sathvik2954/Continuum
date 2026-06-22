@@ -5,6 +5,8 @@
     "consultations": "परामर्श",
     "findDoctors": "डॉक्टर खोजें",
     "myDoctors": "मेरे डॉक्टर",
+    "myPatients": "मेरे मरीज़",
+    "scheduleCall": "कॉल शेड्यूल करें",
     "analytics": "विश्लेषण"
   },
   "auth": {
@@ -25,7 +27,17 @@
     "consultations": "परामर्श",
     "followUpsDue": "फॉलो-अप देय",
     "conditions": "बीमारियां",
-    "medications": "दवाइयां"
+    "medications": "दवाइयां",
+    "total": "कुल",
+    "active": "सक्रिय",
+    "scheduled": "निर्धारित",
+    "scheduledFollowUps": "निर्धारित फॉलो-अप",
+    "noFollowUpsScheduled": "कोई फॉलो-अप निर्धारित नहीं है",
+    "scheduleCall": "कॉल शेड्यूल करें",
+    "operational": "CONTINUUM पूरी तरह से चालू है",
+    "operationalDesc": "आपकी ऑफ़लाइन प्रोफ़ाइल, डॉक्टर कनेक्शन, असिंक्रोनस परामर्श, और ऑडियो ट्रांसक्रिप्शन सक्रिय हैं। अपने डॉक्टर के साथ विवरण साझा करने के लिए अनुरोध भेजें या नया परामर्श खोलें।",
+    "pendingResponse": "प्रतिक्रिया की प्रतीक्षा में",
+    "due": "देय"
   },
   "consultation": {
     "newConsultation": "नया परामर्श",

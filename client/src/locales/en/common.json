@@ -5,6 +5,8 @@
     "consultations": "Consultations",
     "findDoctors": "Find Doctors",
     "myDoctors": "My Doctors",
+    "myPatients": "My Patients",
+    "scheduleCall": "Schedule Call",
     "analytics": "Analytics"
   },
   "auth": {
@@ -25,7 +27,17 @@
     "consultations": "Consultations",
     "followUpsDue": "Follow-ups due",
     "conditions": "Conditions",
-    "medications": "Medications"
+    "medications": "Medications",
+    "total": "Total",
+    "active": "Active",
+    "scheduled": "Scheduled",
+    "scheduledFollowUps": "Scheduled Follow-ups",
+    "noFollowUpsScheduled": "No follow-ups scheduled",
+    "scheduleCall": "Schedule Call",
+    "operational": "CONTINUUM is fully operational",
+    "operationalDesc": "Your offline profile, doctor connections, async consultations, and audio transcriptions are active. Send a request or open a new consultation to share details with your doctor.",
+    "pendingResponse": "Awaiting response",
+    "due": "due"
   },
   "consultation": {
     "newConsultation": "New consultation",
