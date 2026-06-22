@@ -32,7 +32,7 @@ const PatientChangeSchema = new Schema<IPatientChange>({
   changedAt: { type: Date, default: Date.now },
 });
 
-// Audit logs are never deleted — no isDeleted field intentionally
+// Audit logs are never deleted - no isDeleted field intentionally
 PatientChangeSchema.index({ patientId: 1, changedAt: -1 });
 
 export const PatientChange = mongoose.model<IPatientChange>(

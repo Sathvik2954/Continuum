@@ -97,8 +97,8 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
     const axiosError = error as { response?: { status: number; data?: { error?: string } } };
 
     if (axiosError.response?.status === 409) {
-      // Conflict — server has a newer version. Mark failed immediately,
-      // don't retry automatically (retrying won't help — the data is stale).
+      // Conflict - server has a newer version. Mark failed immediately,
+      // don't retry automatically (retrying won't help - the data is stale).
       const updated: SyncQueueItem = {
         ...item,
         syncStatus: 'failed',
@@ -125,7 +125,7 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
     await db.sync_queue.update(item.id!, {
       syncStatus: 'pending',
       retryCount: newRetryCount,
-      errorMessage: axiosError.response?.data?.error || 'Network error — will retry automatically',
+      errorMessage: axiosError.response?.data?.error || 'Network error - will retry automatically',
     });
 
     console.warn(`Item ${item.clientId} failed (attempt ${newRetryCount}). Retrying in ${delay / 1000}s`);
@@ -171,7 +171,7 @@ export async function getSyncStats(): Promise<{
 
 export function initSyncEngine(): () => void {
   const handleOnline = () => {
-    console.log('🌐 Back online — starting sync...');
+    console.log('🌐 Back online - starting sync...');
     syncPendingItems();
   };
 

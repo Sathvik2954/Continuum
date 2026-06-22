@@ -9,7 +9,7 @@ export class CallRecorder {
   private recording = false;
 
   start(stream: MediaStream): void {
-    // Record audio only — strip video tracks to keep file size manageable
+    // Record audio only - strip video tracks to keep file size manageable
     const audioOnlyStream = new MediaStream(stream.getAudioTracks());
 
     const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')

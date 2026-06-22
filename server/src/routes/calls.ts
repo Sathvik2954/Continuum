@@ -68,7 +68,7 @@ router.patch('/:id/confirm', async (req: Request, res: Response): Promise<void> 
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+        res.status(403).json({ error: 'Access denied - no active connection with this patient' });
         return;
       }
     }
@@ -113,7 +113,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+        res.status(403).json({ error: 'Access denied - no active connection with this patient' });
         return;
       }
     }
@@ -124,7 +124,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// ─── Get ICE server config — fetches LIVE short-lived TURN credentials
+// ─── Get ICE server config - fetches LIVE short-lived TURN credentials
 //     from Xirsys on every request. Never caches the secret on the client. ────
 
 interface XirsysIceServer {
@@ -155,7 +155,7 @@ router.get('/:id/ice-config', async (req: Request, res: Response): Promise<void>
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+        res.status(403).json({ error: 'Access denied - no active connection with this patient' });
         return;
       }
     }
@@ -193,10 +193,10 @@ router.get('/:id/ice-config', async (req: Request, res: Response): Promise<void>
         }
       } catch (xirsysErr) {
         console.error('Xirsys fetch error:', xirsysErr);
-        // Fall through — STUN-only is better than nothing
+        // Fall through - STUN-only is better than nothing
       }
     } else {
-      console.warn('XIRSYS_IDENT / XIRSYS_SECRET / XIRSYS_CHANNEL not set — using STUN-only (calls may fail behind strict NAT)');
+      console.warn('XIRSYS_IDENT / XIRSYS_SECRET / XIRSYS_CHANNEL not set - using STUN-only (calls may fail behind strict NAT)');
     }
 
     res.json({ iceServers });
@@ -222,7 +222,7 @@ router.patch('/:id/cancel', async (req: Request, res: Response): Promise<void> =
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+        res.status(403).json({ error: 'Access denied - no active connection with this patient' });
         return;
       }
     }
@@ -239,7 +239,7 @@ router.patch('/:id/cancel', async (req: Request, res: Response): Promise<void> =
   }
 });
 
-// ─── Upload call recording — patient's device records audio during the call,
+// ─── Upload call recording - patient's device records audio during the call,
 //     uploads it after hangup, server creates a LIVE_CALL consultation ────────
 
 router.post(
@@ -263,7 +263,7 @@ router.post(
           status: 'ACTIVE',
         });
         if (!link) {
-          res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+          res.status(403).json({ error: 'Access denied - no active connection with this patient' });
           return;
         }
       }
@@ -278,7 +278,7 @@ router.post(
         ? Math.round((Date.now() - call.startedAt.getTime()) / 1000)
         : undefined;
 
-      // Create the LIVE_CALL consultation — this is what makes the call
+      // Create the LIVE_CALL consultation - this is what makes the call
       // show up on the patient's health timeline, same as an async one.
       const consultation = await Consultation.create({
         patientId: call.patientId,
@@ -286,7 +286,7 @@ router.post(
         type: 'LIVE_CALL',
         initiatedBy: call.scheduledBy,
         priority: 'NORMAL',
-        status: 'DOCTOR_RESPONDED', // live calls are considered "responded" immediately — the conversation already happened
+        status: 'DOCTOR_RESPONDED', // live calls are considered "responded" immediately - the conversation already happened
         doctorResponseAudioUrl: recordingUrl,
         doctorNotes: call.preCallNotes,
         callDurationSeconds: durationSeconds,

@@ -170,7 +170,7 @@ export const DoctorSearchPage: React.FC = () => {
                         {state === 'sent' ? (
                           <StatusPill variant="pending" label="Request sent" />
                         ) : state === 'error' ? (
-                          <StatusPill variant="revoked" label="Failed — retry" />
+                          <StatusPill variant="revoked" label="Failed - retry" />
                         ) : (
                           <button
                             onClick={() => sendRequest(doctor.userId)}

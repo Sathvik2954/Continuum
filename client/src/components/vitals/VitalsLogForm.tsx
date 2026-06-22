@@ -47,7 +47,7 @@ export const VitalsLogForm: React.FC<Props> = ({ onLogged }) => {
       setOpen(false);
       onLogged();
     } catch {
-      // Network failed even though navigator.onLine was true — queue it
+      // Network failed even though navigator.onLine was true - queue it
       await queueItem('vitals', payload);
       setForm({ bpSystolic: '', bpDiastolic: '', bloodGlucoseFasting: '', bloodGlucosePostMeal: '', weightKg: '', heartRate: '', notes: '' });
       setOpen(false);

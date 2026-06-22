@@ -58,7 +58,7 @@ export const CallRoomPage: React.FC = () => {
       localStreamRef.current = localStream;
       if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
 
-      // Recording is patient-only (spec FR-34) — avoids duplicate recordings
+      // Recording is patient-only (spec FR-34) - avoids duplicate recordings
       // from both participants and keeps storage cost predictable.
       if (isPatient) {
         recorderRef.current = new CallRecorder();
@@ -303,7 +303,7 @@ export const CallRoomPage: React.FC = () => {
 
       {/* Video area */}
       <div className="relative w-full" style={{ height: 'calc(100vh - 56px - 64px)' }}>
-        {/* Remote video — main */}
+        {/* Remote video - main */}
         <video
           ref={remoteVideoRef}
           autoPlay
@@ -320,7 +320,7 @@ export const CallRoomPage: React.FC = () => {
           </div>
         )}
 
-        {/* Local video — picture-in-picture */}
+        {/* Local video - picture-in-picture */}
         <div className="absolute top-4 right-4 w-[140px] h-[105px] rounded-xl overflow-hidden"
           style={{ border: '1px solid rgba(255,255,255,0.60)' }}>
           <video

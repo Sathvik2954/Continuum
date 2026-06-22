@@ -96,7 +96,7 @@ export const ScheduleCallPage: React.FC = () => {
               <option value="">Select…</option>
               {counterparts.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {isPatient ? `Dr. ${c.name}` : c.name}{c.specialization ? ` — ${c.specialization}` : ''}
+                  {isPatient ? `Dr. ${c.name}` : c.name}{c.specialization ? ` - ${c.specialization}` : ''}
                 </option>
               ))}
             </select>

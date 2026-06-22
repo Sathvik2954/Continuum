@@ -59,7 +59,7 @@ export class WebRTCSession {
 
     this.pc.onconnectionstatechange = () => {
       if (this.pc?.connectionState === 'failed') {
-        this.callbacks.onError('Connection failed — this may be a network issue.');
+        this.callbacks.onError('Connection failed - this may be a network issue.');
       }
     };
 

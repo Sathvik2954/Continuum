@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { PatientDoctorLink } from '../models/PatientDoctorLink';
 
 /**
- * assertPatientAccess — runs at the top of every patient-data route.
+ * assertPatientAccess - runs at the top of every patient-data route.
  *
  * Rules:
  *  - PATIENT can only access their own data (patientId === req.user.userId)
@@ -32,10 +32,10 @@ export const assertPatientAccess = (paramName = 'patientId') => {
         return;
       }
 
-      // Admin — unrestricted
+      // Admin - unrestricted
       if (role === 'ADMIN') { next(); return; }
 
-      // Patient — own data only
+      // Patient - own data only
       if (role === 'PATIENT') {
         if (userId !== patientId) {
           res.status(403).json({ error: 'You can only access your own data' });
@@ -45,7 +45,7 @@ export const assertPatientAccess = (paramName = 'patientId') => {
         return;
       }
 
-      // Doctor — must have an ACTIVE link
+      // Doctor - must have an ACTIVE link
       if (role === 'DOCTOR') {
         const link = await PatientDoctorLink.findOne({
           patientId: new mongoose.Types.ObjectId(patientId),
@@ -55,7 +55,7 @@ export const assertPatientAccess = (paramName = 'patientId') => {
 
         if (!link) {
           res.status(403).json({
-            error: 'Access denied — no active connection with this patient',
+            error: 'Access denied - no active connection with this patient',
           });
           return;
         }

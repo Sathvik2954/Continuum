@@ -88,7 +88,7 @@ router.get(
           entries.push({
             type: 'medication',
             id: med._id.toString(),
-            title: `${med.medicineName} — ${med.dosage}`,
+            title: `${med.medicineName} - ${med.dosage}`,
             subtitle: `${med.frequency} · ${med.durationDays} days${isExpired ? ' · Completed' : ' · Active'}`,
             timestamp: med.createdAt.toISOString(),
             meta: {
@@ -155,7 +155,7 @@ router.get(
   }
 );
 
-// ─── GET health summary — for patient header card ────────────────────────────
+// ─── GET health summary - for patient header card ────────────────────────────
 
 router.get(
   '/:patientId/summary',
@@ -192,7 +192,7 @@ router.get(
   }
 );
 
-// ─── GET vitals chart data — last N readings, ascending for charting ──────────
+// ─── GET vitals chart data - last N readings, ascending for charting ──────────
 
 router.get(
   '/:patientId/vitals-chart',

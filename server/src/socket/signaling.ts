@@ -24,7 +24,7 @@ interface AuthenticatedSocket extends Socket {
   user?: JWTPayload;
 }
 
-// In-memory room registry — { callId: Set<socketId> }
+// In-memory room registry - { callId: Set<socketId> }
 // This is fine for a single-instance deployment. If you ever scale to
 // multiple server instances, this needs to move to Redis pub/sub.
 const rooms = new Map<string, Set<string>>();
@@ -114,7 +114,7 @@ export function setupSignaling(io: SocketIOServer): void {
       }
     });
 
-    // ── WebRTC signaling relay — these three just forward messages
+    // ── WebRTC signaling relay - these three just forward messages
     //    between the two peers in the room. The server never inspects
     //    or modifies SDP/ICE content. ───────────────────────────────────────────
 
@@ -130,7 +130,7 @@ export function setupSignaling(io: SocketIOServer): void {
       socket.to(callId).emit('ice_candidate', { candidate });
     });
 
-    // ── call_ended — either party can end the call for both ───────────────────
+    // ── call_ended - either party can end the call for both ───────────────────
 
     socket.on('call_ended', async ({ callId }: { callId: string }) => {
       try {
@@ -149,7 +149,7 @@ export function setupSignaling(io: SocketIOServer): void {
       }
     });
 
-    // ── disconnect — cleanup + notify peer ─────────────────────────────────────
+    // ── disconnect - cleanup + notify peer ─────────────────────────────────────
 
     socket.on('disconnect', () => {
       const callId = socketToCall.get(socket.id);

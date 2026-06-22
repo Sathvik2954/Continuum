@@ -68,7 +68,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         verified: false,
       });
     } else {
-      // Patient profile created empty — filled in onboarding
+      // Patient profile created empty - filled in onboarding
       await PatientProfile.create({ userId: user._id });
     }
 

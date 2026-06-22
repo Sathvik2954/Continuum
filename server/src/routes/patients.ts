@@ -90,7 +90,7 @@ router.patch(
   }
 );
 
-// ─── SYNC endpoint — receive offline-created profile ─────────────────────────
+// ─── SYNC endpoint - receive offline-created profile ─────────────────────────
 // Called by the client sync engine when it comes online
 
 router.post('/sync/profile', requireRole('PATIENT'), async (req: Request, res: Response): Promise<void> => {
@@ -106,13 +106,13 @@ router.post('/sync/profile', requireRole('PATIENT'), async (req: Request, res: R
       isDeleted: false,
     });
 
-    // Conflict check — reject stale writes
+    // Conflict check - reject stale writes
     if (existing && clientUpdatedAt) {
       const serverTime = new Date(existing.updatedAt).getTime();
       const clientTime = new Date(clientUpdatedAt).getTime();
       if (clientTime < serverTime) {
         res.status(409).json({
-          error: 'Conflict — server has a newer version',
+          error: 'Conflict - server has a newer version',
           serverUpdatedAt: existing.updatedAt,
         });
         return;

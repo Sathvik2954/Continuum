@@ -1,6 +1,6 @@
 /**
  * Compresses an image file client-side to under the target size before upload.
- * Uses canvas resizing + JPEG quality reduction — runs entirely in-browser.
+ * Uses canvas resizing + JPEG quality reduction - runs entirely in-browser.
  */
 export async function compressImage(
   file: File,

@@ -144,7 +144,7 @@ export const NewConsultationPage: React.FC = () => {
               <option value="">Choose a connected doctor…</option>
               {doctors.map((d) => (
                 <option key={d.doctorId} value={d.doctorId}>
-                  Dr. {d.name} — {d.specialization}
+                  Dr. {d.name} - {d.specialization}
                 </option>
               ))}
             </select>

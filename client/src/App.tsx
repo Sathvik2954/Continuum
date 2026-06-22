@@ -55,7 +55,7 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute role="PATIENT"><OnboardingPage /></ProtectedRoute>
         } />
 
-        {/* Dashboard — role aware */}
+        {/* Dashboard - role aware */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             {user?.role === 'DOCTOR' ? (
@@ -79,7 +79,7 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute role="PATIENT"><NewConsultationPage /></ProtectedRoute>
         } />
 
-        {/* Timeline — patient's own (no param) */}
+        {/* Timeline - patient's own (no param) */}
         <Route path="/timeline" element={
           <ProtectedRoute role="PATIENT"><TimelinePage /></ProtectedRoute>
         } />
@@ -87,12 +87,12 @@ const AppRoutes: React.FC = () => {
         <Route path="/patients" element={
           <ProtectedRoute role="DOCTOR"><MyPatientsSearchPage /></ProtectedRoute>
         } />
-        {/* Timeline — doctor viewing a specific patient */}
+        {/* Timeline - doctor viewing a specific patient */}
         <Route path="/patients/:patientId/timeline" element={
           <ProtectedRoute role="DOCTOR"><TimelinePage /></ProtectedRoute>
         } />
 
-        {/* Shared — both roles */}
+        {/* Shared - both roles */}
         <Route path="/consultations" element={
           <ProtectedRoute><ConsultationListPage /></ProtectedRoute>
         } />

@@ -17,7 +17,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear token and redirect to login
+// Handle 401 globally - clear token and redirect to login
 api.interceptors.response.use(
   (response) => response,
   (error) => {

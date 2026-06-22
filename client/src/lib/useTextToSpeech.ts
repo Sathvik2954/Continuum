@@ -30,7 +30,7 @@ export function useTextToSpeech(): UseTTSReturn {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = LANG_MAP[lang] || 'en-IN';
-    utterance.rate = 0.9; // slightly slower — clearer for medication instructions
+    utterance.rate = 0.9; // slightly slower - clearer for medication instructions
     utterance.pitch = 1;
 
     utterance.onstart = () => setSpeaking(true);

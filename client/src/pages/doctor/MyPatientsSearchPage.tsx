@@ -44,7 +44,7 @@ export const MyPatientsSearchPage: React.FC = () => {
 
   useEffect(() => { fetchAndCache(); }, [fetchAndCache]);
 
-  // Live search — searches the IndexedDB cache directly, works fully offline
+  // Live search - searches the IndexedDB cache directly, works fully offline
   useEffect(() => {
     const runSearch = async () => {
       const results = await searchCachedPatients(query);
@@ -58,7 +58,7 @@ export const MyPatientsSearchPage: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-[22px] font-medium text-sky-900">My patients</h1>
         <p className="text-[13px] text-[#78716C] mt-1">
-          {offline ? 'Offline — searching cached patient list' : 'Search by name, email, or blood group'}
+          {offline ? 'Offline - searching cached patient list' : 'Search by name, email, or blood group'}
         </p>
       </div>
 

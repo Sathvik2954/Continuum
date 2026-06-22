@@ -115,7 +115,7 @@ router.post('/checkin', requireRole('DOCTOR'), async (req: Request, res: Respons
   }
 });
 
-// ─── GET consultations — role-aware list ──────────────────────────────────────
+// ─── GET consultations - role-aware list ──────────────────────────────────────
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -184,7 +184,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       }
       const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(userId), isDeleted: false });
       if (!doctorProfile || !doctorProfile.verified) {
-        res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+        res.status(403).json({ error: 'Access denied - doctor profile is not verified' });
         return;
       }
       const link = await PatientDoctorLink.findOne({
@@ -193,7 +193,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
+        res.status(403).json({ error: 'Access denied - connection with this patient is not active' });
         return;
       }
     } else if (role === 'PATIENT') {
@@ -235,7 +235,7 @@ router.patch('/:id/review', requireRole('DOCTOR'), async (req: Request, res: Res
     // Check if doctor is verified
     const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(doctorId), isDeleted: false });
     if (!doctorProfile || !doctorProfile.verified) {
-      res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+      res.status(403).json({ error: 'Access denied - doctor profile is not verified' });
       return;
     }
 
@@ -246,7 +246,7 @@ router.patch('/:id/review', requireRole('DOCTOR'), async (req: Request, res: Res
       status: 'ACTIVE',
     });
     if (!link) {
-      res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
+      res.status(403).json({ error: 'Access denied - connection with this patient is not active' });
       return;
     }
 
@@ -291,7 +291,7 @@ router.post(
       // Check if doctor is verified
       const doctorProfile = await DoctorProfile.findOne({ userId: new mongoose.Types.ObjectId(doctorId), isDeleted: false });
       if (!doctorProfile || !doctorProfile.verified) {
-        res.status(403).json({ error: 'Access denied — doctor profile is not verified' });
+        res.status(403).json({ error: 'Access denied - doctor profile is not verified' });
         return;
       }
 
@@ -302,13 +302,13 @@ router.post(
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — connection with this patient is not active' });
+        res.status(403).json({ error: 'Access denied - connection with this patient is not active' });
         return;
       }
 
       if (!canTransition(consultation.status, 'DOCTOR_RESPONDED')) {
         res.status(400).json({
-          error: `Cannot respond — consultation is in ${consultation.status} state`,
+          error: `Cannot respond - consultation is in ${consultation.status} state`,
         });
         return;
       }
@@ -354,7 +354,7 @@ router.post(
 
       const savedMeds = await Medication.find({ consultationId: consultation._id });
 
-      // Create the actual FollowUp document — not just a date field on the
+      // Create the actual FollowUp document - not just a date field on the
       // consultation. This is what powers the Upcoming/Overdue dashboards.
       let followUp = null;
       if (followUpDate) {

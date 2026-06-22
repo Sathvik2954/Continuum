@@ -40,7 +40,7 @@ router.post('/', requireRole('DOCTOR'), async (req: Request, res: Response): Pro
     });
 
     if (!link) {
-      res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+      res.status(403).json({ error: 'Access denied - no active connection with this patient' });
       return;
     }
 
@@ -89,7 +89,7 @@ router.patch('/:id/complete', requireRole('PATIENT'), async (req: Request, res: 
   }
 });
 
-// ─── Sync-queue endpoint — for offline-queued completions ────────────────────
+// ─── Sync-queue endpoint - for offline-queued completions ────────────────────
 // Accepts { followUpId, completionNotes, completedAt } since the offline
 // queue can't carry the :id as a URL param the same way.
 

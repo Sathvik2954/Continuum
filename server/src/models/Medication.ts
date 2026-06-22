@@ -32,7 +32,7 @@ const MedicationSchema = new Schema<IMedication>(
 MedicationSchema.index({ patientId: 1, createdAt: -1 });
 MedicationSchema.index({ consultationId: 1 });
 
-// Virtual — computed on read, not stored (avoids stale data)
+// Virtual - computed on read, not stored (avoids stale data)
 MedicationSchema.virtual('isExpired').get(function (this: IMedication) {
   const endDate = new Date(this.startDate);
   endDate.setDate(endDate.getDate() + this.durationDays);

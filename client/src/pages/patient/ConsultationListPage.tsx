@@ -147,7 +147,7 @@ export const ConsultationListPage: React.FC = () => {
           {urgent.length > 0 && (
             <div>
               <div className="text-[11px] font-medium text-[#991B1B] uppercase tracking-wider mb-3">
-                Urgent — {urgent.length}
+                Urgent - {urgent.length}
               </div>
               <div className="space-y-3">
                 {urgent.map((item) => <ConsultationCard key={item._id} item={item} urgent />)}

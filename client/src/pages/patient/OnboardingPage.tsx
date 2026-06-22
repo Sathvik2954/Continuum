@@ -58,7 +58,7 @@ export const OnboardingPage: React.FC = () => {
         setSaved(true);
         setTimeout(() => navigate('/dashboard'), 800);
       } catch {
-        // Offline or error — queue for later
+        // Offline or error - queue for later
         await queueItem('patient_profile', profileData);
         setSaved(true);
         setTimeout(() => navigate('/dashboard'), 800);
@@ -87,7 +87,7 @@ export const OnboardingPage: React.FC = () => {
             This helps doctors understand your health history.
             {!navigator.onLine && (
               <span className="block mt-1 text-[#78350F]">
-                You're offline — your data will sync automatically when connected.
+                You're offline - your data will sync automatically when connected.
               </span>
             )}
           </p>

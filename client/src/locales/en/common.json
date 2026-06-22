@@ -46,7 +46,7 @@
     "normal": "Normal",
     "high": "High",
     "urgent": "Urgent",
-    "symptoms": "Symptoms — select all that apply",
+    "symptoms": "Symptoms - select all that apply",
     "recordAudio": "Describe your symptoms by voice",
     "additionalNotes": "Additional notes",
     "submit": "Submit consultation",
@@ -81,7 +81,7 @@
     "synced": "Synced",
     "pending": "pending",
     "failed": "sync failed",
-    "offline": "You are offline — data saved locally",
+    "offline": "You are offline - data saved locally",
     "retry": "Retry"
   },
   "common": {

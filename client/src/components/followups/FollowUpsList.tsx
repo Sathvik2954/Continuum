@@ -118,7 +118,7 @@ export const FollowUpsList: React.FC<Props> = ({ patientId, isPatientView }) => 
       {overdue.length > 0 && (
         <div>
           <div className="text-[11px] font-medium text-[#991B1B] uppercase tracking-wider mb-2">
-            Overdue — {overdue.length}
+            Overdue - {overdue.length}
           </div>
           <div className="space-y-2">
             {overdue.map((f) => <FollowUpRow key={f._id} f={f} isOverdue />)}
@@ -128,7 +128,7 @@ export const FollowUpsList: React.FC<Props> = ({ patientId, isPatientView }) => 
       {upcoming.length > 0 && (
         <div>
           <div className="text-[11px] font-medium text-[#7A5C14] uppercase tracking-wider mb-2">
-            Upcoming — {upcoming.length}
+            Upcoming - {upcoming.length}
           </div>
           <div className="space-y-2">
             {upcoming.map((f) => <FollowUpRow key={f._id} f={f} isOverdue={false} />)}

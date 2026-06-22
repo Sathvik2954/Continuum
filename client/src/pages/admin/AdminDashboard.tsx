@@ -47,7 +47,7 @@ export const AdminDashboard: React.FC = () => {
       setUsers(usersRes.data.users);
       setStorage(storageRes.data);
     } catch {
-      // silently fail — likely not an admin
+      // silently fail - likely not an admin
     } finally {
       setLoading(false);
     }

@@ -109,11 +109,11 @@ router.patch(
         status: 'ACTIVE',
       });
       if (!link) {
-        res.status(403).json({ error: 'Access denied — no active connection with this patient' });
+        res.status(403).json({ error: 'Access denied - no active connection with this patient' });
         return;
       }
 
-      // Only the doctor who added it (or any ACTIVE-linked doctor) can update —
+      // Only the doctor who added it (or any ACTIVE-linked doctor) can update -
       // here we keep it simple: any doctor with active access to the patient.
       const changes: { field: string; oldValue: string; newValue: string }[] = [];
 

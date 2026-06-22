@@ -49,8 +49,8 @@ export interface CachedTimelineEntry {
   cachedAt: number;
 }
 
-// Doctor's patient list — cached so a doctor can search their own patients
-// by name or blood group even with zero connectivity (FR — offline search).
+// Doctor's patient list - cached so a doctor can search their own patients
+// by name or blood group even with zero connectivity (FR - offline search).
 export interface CachedPatientListEntry {
   patientId: string;       // primary key
   name: string;
@@ -82,7 +82,7 @@ class ContinuumDB extends Dexie {
       cached_timeline: 'id, patientId, type, timestamp',
     });
 
-    // v3 — adds offline patient search cache for doctors
+    // v3 - adds offline patient search cache for doctors
     this.version(3).stores({
       sync_queue:           '++id, clientId, type, syncStatus, createdAt',
       cached_profile:       'userId',

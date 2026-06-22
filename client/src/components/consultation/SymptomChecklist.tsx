@@ -44,7 +44,7 @@ export const SymptomChecklist: React.FC<Props> = ({ value, onChange }) => {
   return (
     <div>
       <label className="block text-[12px] font-medium text-sky-600 mb-2">
-        Symptoms — select all that apply
+        Symptoms - select all that apply
       </label>
       <div className="flex flex-wrap gap-2 mb-3">
         {SYMPTOM_OPTIONS.map((opt) => {

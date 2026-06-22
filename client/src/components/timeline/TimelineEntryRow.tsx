@@ -63,8 +63,8 @@ export const TimelineEntryRow: React.FC<Props> = ({
         {type === 'medication' && (
           <div className="mt-2">
             <SpeakMedicationButton
-              medicineName={meta.medicineName as string || title.split(' — ')[0]}
-              dosage={meta.dosage as string || title.split(' — ')[1] || ''}
+              medicineName={meta.medicineName as string || title.split(' - ')[0]}
+              dosage={meta.dosage as string || title.split(' - ')[1] || ''}
               frequency={meta.frequency as string || subtitle.split(' · ')[0] || ''}
               durationDays={meta.durationDays as number || parseInt(subtitle.split(' · ')[1]) || 1}
               instructions={meta.instructions as string}

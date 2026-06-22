@@ -18,7 +18,7 @@ router.post('/', requireRole('PATIENT'), async (req: Request, res: Response): Pr
       weightKg, heartRate, notes,
     } = req.body;
 
-    // Require at least one actual reading — don't allow empty vitals
+    // Require at least one actual reading - don't allow empty vitals
     const hasAnyReading = [bpSystolic, bpDiastolic, bloodGlucoseFasting, bloodGlucosePostMeal, weightKg, heartRate]
       .some((v) => v !== undefined && v !== null && v !== '');
 

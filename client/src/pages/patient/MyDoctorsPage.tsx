@@ -90,7 +90,7 @@ export const MyDoctorsPage: React.FC = () => {
       {active.length > 0 && (
         <div className="mb-6">
           <div className="text-[11px] font-medium text-[#7A5C14] uppercase tracking-wider mb-3">
-            Active — {active.length}
+            Active - {active.length}
           </div>
           <div className="space-y-3">
             {active.map((c) => (
@@ -129,7 +129,7 @@ export const MyDoctorsPage: React.FC = () => {
       {pending.length > 0 && (
         <div className="mb-6">
           <div className="text-[11px] font-medium text-[#7A5C14] uppercase tracking-wider mb-3">
-            Pending — {pending.length}
+            Pending - {pending.length}
           </div>
           <div className="space-y-3">
             {pending.map((c) => (

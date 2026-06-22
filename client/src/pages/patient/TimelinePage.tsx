@@ -89,7 +89,7 @@ export const TimelinePage: React.FC = () => {
           {isOwnTimeline ? 'Your health timeline' : 'Patient health timeline'}
         </h1>
         <p className="text-[13px] text-[#78716C] mt-1">
-          {offline ? 'Showing cached data — you are offline' : 'Complete chronological history, always up to date'}
+          {offline ? 'Showing cached data - you are offline' : 'Complete chronological history, always up to date'}
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export const TimelinePage: React.FC = () => {
         />
       )}
 
-      {/* Vitals chart + log button — patient's own timeline only */}
+      {/* Vitals chart + log button - patient's own timeline only */}
       {isOwnTimeline && (
         <div className="mb-5 space-y-3">
           <VitalsChart vitals={vitalsChartData} metric="bp" />

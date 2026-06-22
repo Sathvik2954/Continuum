@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-// In src/components/ui/Navbar.tsx — make sure it reads
+// In src/components/ui/Navbar.tsx - make sure it reads
 import { useAuth } from '../../lib/authContext';
 
 interface Props {

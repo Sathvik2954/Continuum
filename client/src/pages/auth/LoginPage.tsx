@@ -29,7 +29,7 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-4xl flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
-        {/* ── Left: about CONTINUUM — human, not technical ───────────────── */}
+        {/* ── Left: about CONTINUUM - human, not technical ───────────────── */}
         <div className="hidden lg:flex flex-col flex-1 max-w-md">
           <div className="mb-1">
             <span className="text-[16px] font-medium text-sky-900 tracking-widest">CONTINUUM</span>
@@ -44,7 +44,7 @@ export const LoginPage: React.FC = () => {
           </h1>
 
           <p className="text-[15px] text-[#44403C] leading-relaxed mb-10">
-            Every doctor you see should know what came before — without you
+            Every doctor you see should know what came before - without you
             repeating it from memory, carrying paper files, or losing the
             thread between appointments. CONTINUUM keeps your records,
             conditions, and care connected, no matter who you see next.

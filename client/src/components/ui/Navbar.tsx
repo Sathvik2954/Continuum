@@ -74,7 +74,7 @@ export const Navbar: React.FC = () => {
  
         <LanguageSwitcher />
  
-        {/* Profile dropdown — separate from logout, click avatar to open */}
+        {/* Profile dropdown - separate from logout, click avatar to open */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((o) => !o)}

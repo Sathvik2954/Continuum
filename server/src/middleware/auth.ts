@@ -49,7 +49,7 @@ export const requireRole = (...roles: Array<'PATIENT' | 'DOCTOR' | 'ADMIN'>) => 
       return;
     }
     if (!roles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Forbidden — insufficient role' });
+      res.status(403).json({ error: 'Forbidden - insufficient role' });
       return;
     }
     next();

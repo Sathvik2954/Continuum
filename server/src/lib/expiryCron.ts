@@ -3,7 +3,7 @@ import { PatientDoctorLink } from '../models/PatientDoctorLink';
 /**
  * Expires all PENDING connection requests older than 7 days.
  * Called on server start and then every 24 hours.
- * Does NOT require node-cron — uses setInterval for zero extra dependencies.
+ * Does NOT require node-cron - uses setInterval for zero extra dependencies.
  */
 export const startExpiryCron = (): void => {
   const run = async () => {
