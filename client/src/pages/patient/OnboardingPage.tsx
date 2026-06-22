@@ -216,7 +216,7 @@ export const OnboardingPage: React.FC = () => {
                   color: '#FEF9F0',
                 }}
               >
-                {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save profile'}
+                {saved ? 'Saved' : saving ? 'Saving…' : 'Save profile'}
               </button>
               <p className="text-center text-[12px] text-[#78716C] mt-3">
                 You can update this anytime from your profile

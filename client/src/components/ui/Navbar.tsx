@@ -96,14 +96,14 @@ export const Navbar: React.FC = () => {
                 onClick={() => { setMenuOpen(false); navigate('/profile'); }}
                 className="w-full text-left px-3 py-2.5 text-[13px] text-sky-900 hover:bg-[rgba(255,255,255,0.20)] transition-colors"
               >
-                👤 Profile
+                Profile
               </button>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-3 py-2.5 text-[13px] hover:bg-[rgba(239,68,68,0.12)] transition-colors"
                 style={{ color: '#991B1B' }}
               >
-                🚪 Logout
+                Logout
               </button>
             </div>
           )}

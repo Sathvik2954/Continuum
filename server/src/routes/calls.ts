@@ -189,14 +189,14 @@ router.get('/:id/ice-config', async (req: Request, res: Response): Promise<void>
             });
           }
         } else {
-          console.warn('⚠️  Xirsys request failed:', xirsysRes.status, await xirsysRes.text());
+          console.warn('Xirsys request failed:', xirsysRes.status, await xirsysRes.text());
         }
       } catch (xirsysErr) {
         console.error('Xirsys fetch error:', xirsysErr);
         // Fall through — STUN-only is better than nothing
       }
     } else {
-      console.warn('⚠️  XIRSYS_IDENT / XIRSYS_SECRET / XIRSYS_CHANNEL not set — using STUN-only (calls may fail behind strict NAT)');
+      console.warn('XIRSYS_IDENT / XIRSYS_SECRET / XIRSYS_CHANNEL not set — using STUN-only (calls may fail behind strict NAT)');
     }
 
     res.json({ iceServers });

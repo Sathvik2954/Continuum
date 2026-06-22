@@ -110,7 +110,7 @@ export const DoctorDashboard: React.FC = () => {
       <div className="mb-7 flex justify-between items-center">
         <div>
           <h1 className="text-[22px] font-medium text-sky-900">
-            Good morning, Dr. {user?.name?.split(' ')[0]} 👋
+            Good morning, Dr. {user?.name?.split(' ')[0]}
           </h1>
           <p className="text-[13px] text-[#78716C] mt-1">
             {new Date().toLocaleDateString('en-IN', {
@@ -123,7 +123,7 @@ export const DoctorDashboard: React.FC = () => {
           className="px-3.5 py-2 text-[12px] font-medium text-cream-50 rounded-sm hover:opacity-90 transition-opacity"
           style={{ background: 'rgba(14,165,233,0.75)', border: '0.5px solid rgba(255,255,255,0.45)' }}
         >
-          📞 Schedule Call
+          Schedule Call
         </Link>
       </div>
 

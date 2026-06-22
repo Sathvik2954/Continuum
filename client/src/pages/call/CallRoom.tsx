@@ -268,7 +268,7 @@ export const CallRoomPage: React.FC = () => {
           </p>
           {isPatient && (
             <p className="text-[12px] text-sky-600 mb-6">
-              {uploadingRecording ? 'Saving recording to your timeline…' : '✓ Recording saved to your health timeline'}
+              {uploadingRecording ? 'Saving recording to your timeline…' : 'Recording saved to your health timeline'}
             </p>
           )}
           <button onClick={() => navigate('/dashboard')}
@@ -334,34 +334,33 @@ export const CallRoomPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Controls */}
       <div className="glass-elevated h-16 flex items-center justify-center gap-4">
         <button
           onClick={handleToggleMute}
-          className="w-11 h-11 rounded-full flex items-center justify-center"
+          className="px-4 h-11 rounded-full flex items-center justify-center text-[13px] font-medium text-sky-900 transition-all"
           style={{
             background: muted ? 'rgba(239,68,68,0.20)' : 'rgba(255,255,255,0.20)',
             border: '0.5px solid rgba(255,255,255,0.45)',
           }}
         >
-          {muted ? '🔇' : '🎙'}
+          {muted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={handleToggleVideo}
-          className="w-11 h-11 rounded-full flex items-center justify-center"
+          className="px-4 h-11 rounded-full flex items-center justify-center text-[13px] font-medium text-sky-900 transition-all"
           style={{
             background: videoOff ? 'rgba(239,68,68,0.20)' : 'rgba(255,255,255,0.20)',
             border: '0.5px solid rgba(255,255,255,0.45)',
           }}
         >
-          {videoOff ? '📷' : '🎥'}
+          {videoOff ? 'Video On' : 'Video Off'}
         </button>
         <button
           onClick={handleEndCall}
-          className="w-14 h-11 rounded-full flex items-center justify-center"
+          className="px-6 h-11 rounded-full flex items-center justify-center text-[13px] font-medium text-cream-50 transition-all"
           style={{ background: 'rgba(239,68,68,0.85)', border: '0.5px solid rgba(255,255,255,0.45)' }}
         >
-          📞
+          End Call
         </button>
       </div>
     </div>

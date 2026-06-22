@@ -105,7 +105,7 @@ const start = async () => {
   await connectDB();
   startExpiryCron();
   httpServer.listen(PORT, () => {
-    console.log(`🚀 CONTINUUM server (HTTP + Socket.io) running on http://localhost:${PORT}`);
+    console.log(`CONTINUUM server (HTTP + Socket.io) running on http://localhost:${PORT}`);
   });
 };
 

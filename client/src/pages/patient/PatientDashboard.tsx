@@ -63,7 +63,7 @@ export const PatientDashboard: React.FC = () => {
       <div className="mb-7 flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-[22px] font-medium text-sky-900">
-            {t('dashboard.goodMorning')}, {user?.name?.split(' ')[0]} 👋
+            {t('dashboard.goodMorning')}, {user?.name?.split(' ')[0]}
           </h1>
           <p className="text-[13px] text-[#78716C] mt-1">
             {new Date().toLocaleDateString('en-IN', {
@@ -76,7 +76,7 @@ export const PatientDashboard: React.FC = () => {
           className="text-[13px] font-medium px-4 py-2.5 rounded-sm text-cream-50"
           style={{ background: 'rgba(14,165,233,0.75)', backdropFilter: 'blur(8px)', border: '0.5px solid rgba(255,255,255,0.45)' }}
         >
-          📞 {t('dashboard.scheduleCall')}
+          {t('dashboard.scheduleCall')}
         </button>
       </div>
 
@@ -138,7 +138,7 @@ export const PatientDashboard: React.FC = () => {
       {/* Status card */}
       <GlassCard className="p-6 text-center">
         <div className="text-[14px] font-medium text-sky-900 mb-2">
-          {t('dashboard.operational')} ✓
+          {t('dashboard.operational')}
         </div>
         <p className="text-[13px] text-[#78716C] leading-relaxed">
           {t('dashboard.operationalDesc')}

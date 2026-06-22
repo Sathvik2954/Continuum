@@ -91,7 +91,7 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
     }
 
     await db.sync_queue.update(item.id!, { syncStatus: 'synced' });
-    console.log(`✅ Synced item ${item.clientId} (${item.type})`);
+    console.log(`Synced item ${item.clientId} (${item.type})`);
   } catch (error: unknown) {
     const newRetryCount = item.retryCount + 1;
     const axiosError = error as { response?: { status: number; data?: { error?: string } } };
@@ -107,7 +107,7 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
       };
       await db.sync_queue.update(item.id!, updated);
       conflictListeners.forEach((fn) => fn(updated));
-      console.warn(`⚠️ Conflict on item ${item.clientId}`);
+      console.warn(`Conflict on item ${item.clientId}`);
       return;
     }
 
@@ -117,7 +117,7 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
         retryCount: newRetryCount,
         errorMessage: axiosError.response?.data?.error || 'Failed after multiple attempts. Check your connection.',
       });
-      console.error(`❌ Item ${item.clientId} permanently failed after ${MAX_RETRIES} retries`);
+      console.error(`Item ${item.clientId} permanently failed after ${MAX_RETRIES} retries`);
       return;
     }
 
@@ -128,7 +128,7 @@ async function syncItem(item: SyncQueueItem): Promise<void> {
       errorMessage: axiosError.response?.data?.error || 'Network error — will retry automatically',
     });
 
-    console.warn(`⚠️ Item ${item.clientId} failed (attempt ${newRetryCount}). Retrying in ${delay / 1000}s`);
+    console.warn(`Item ${item.clientId} failed (attempt ${newRetryCount}). Retrying in ${delay / 1000}s`);
 
     setTimeout(async () => {
       const updated = await db.sync_queue.get(item.id!);
