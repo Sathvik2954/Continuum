@@ -57,6 +57,14 @@ app.use('/api/calls',         callRoutes);
 app.use('/api/analytics',     analyticsRoutes);
 app.use('/api/admin',         adminRoutes);
 
+app.get('/', (_, res) => {
+  res.json({
+    message: 'CONTINUUM API Server is fully operational.',
+    healthCheck: '/api/health',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
